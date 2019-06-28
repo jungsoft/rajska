@@ -8,13 +8,13 @@ defmodule Rajska.QueryPermitter do
 
   @behaviour Absinthe.Middleware
 
-  def call(resolution, [{:permit, permission} | scope_config]) do
+  def call(resolution, [{:permit, permission} | _scoped] = config) do
     validate_permission!(permission)
 
     :is_authorized?
     |> Rajska.apply_config_mod([resolution, permission])
     |> update_result(resolution)
-    |> ScopeAuthorization.call(scope_config)
+    |> ScopeAuthorization.call(config)
   end
 
   defp validate_permission!(permitted_roles) do

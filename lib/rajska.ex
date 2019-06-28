@@ -108,9 +108,7 @@ defmodule Rajska do
     |> Enum.map(fn {role, _} -> role end)
   end
 
-  def not_scoped_roles do
-    get_super_roles() ++ :all
-  end
+  def not_scoped_roles, do: [:all | get_super_roles()]
 
   def unauthorized_msg, do: apply_config_mod(:unauthorized_msg)
 

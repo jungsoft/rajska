@@ -9,12 +9,12 @@ defmodule Rajska.ScopeAuthorization do
 
   def call(%{state: :resolved} = resolution, _config), do: resolution
 
-  def call(resolution, scoped: false), do: resolution
+  def call(resolution, [_ | [scoped: false]]), do: resolution
 
-  def call(resolution, config) do
-    case Enum.member?(Rajska.not_scoped_roles(), Rajska.get_user_role(resolution)) do
+  def call(resolution, [{:permit, permission} | scoped_config]) do
+    case Enum.member?(Rajska.not_scoped_roles(), permission) do
       true -> resolution
-      false -> scope_user(resolution, config)
+      false -> scope_user(resolution, scoped_config)
     end
   end
 
