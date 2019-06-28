@@ -35,9 +35,7 @@ defmodule Rajska.QueryPermitterTest do
       end
 
       field :user_scoped_query, :user do
-        arg :id, non_null(:integer)
-
-        middleware Rajska.QueryPermitter, [permit: :user, scoped: User]
+        middleware Rajska.QueryPermitter, [permit: :user, scoped: false]
         resolve fn _, _ ->
           {:ok, %{name: "bob"}}
         end
@@ -59,12 +57,19 @@ defmodule Rajska.QueryPermitterTest do
 
   Application.put_env(Rajska, :schema, Schema)
 
-  test "Admin query fails for user" do
-    doc = """
-    { adminQuery { name email } }
-    """
+  test "Admin query fails for unauthenticated user" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(admin_query(), __MODULE__.Schema, context: %{current_user: nil})
+    assert [
+      %{
+        locations: [%{column: 0, line: 1}],
+        message: "unauthorized",
+        path: ["adminQuery"]
+      }
+    ] == errors
+  end
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(doc, __MODULE__.Schema, context: %{current_user: %{role: :user}})
+  test "Admin query fails for user" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(admin_query(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
     assert [
       %{
         locations: [%{column: 0, line: 1}],
@@ -75,12 +80,11 @@ defmodule Rajska.QueryPermitterTest do
   end
 
   test "Admin query works for admin" do
-    doc = """
-    { adminQuery { name email } }
-    """
+    {:ok, result} = Absinthe.run(admin_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
 
-    assert {:ok, result} = Absinthe.run(doc, __MODULE__.Schema, context: %{current_user: %{role: :user}})
-    assert %{data: %{"adminQuery" => _}} = result
-    refute Map.has_key?(result, "errors")
+    assert %{data: %{"adminQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
   end
+
+  defp admin_query, do: "{ adminQuery { name email } }"
 end
