@@ -5,36 +5,42 @@ defmodule Rajska.Schema do
 
   alias Absinthe.Type.Field
 
-  alias Rajska.QueryAuthorization
+  alias Rajska.{ObjectAuthorization, QueryAuthorization}
 
-  def add_authentication_middleware(
-    [{{QueryAuthorization, :call}, config} = query_permitter | middleware],
+  def add_query_authorization(
+    [{{QueryAuthorization, :call}, config} = query_authorization | middleware],
     _field,
     authorization
   ) do
-    validate_query_permitter!(config, authorization)
+    validate_query_auth_config!(config, authorization)
 
-    [query_permitter] ++ middleware
+    [query_authorization | middleware]
   end
 
-  def add_authentication_middleware(_middleware, %Field{name: name}, _authorization) do
+  def add_query_authorization(_middleware, %Field{name: name}, _authorization) do
     raise "No permission specified for query #{name}"
   end
 
-  defp validate_query_permitter!([permit: _, scoped: false], _authorization), do: :ok
+  def validate_query_auth_config!([permit: _, scoped: false], _authorization), do: :ok
 
-  defp validate_query_permitter!([permit: _, scoped: {schema, _field}], _authorization), do: schema.__schema__(:source)
+  def validate_query_auth_config!([permit: _, scoped: {schema, _field}], _authorization), do: schema.__schema__(:source)
 
-  defp validate_query_permitter!([permit: _, scoped: schema], _authorization), do: schema.__schema__(:source)
+  def validate_query_auth_config!([permit: _, scoped: schema], _authorization), do: schema.__schema__(:source)
 
-  defp validate_query_permitter!([permit: role], authorization) do
+  def validate_query_auth_config!([permit: role], authorization) do
     case Enum.member?(authorization.not_scoped_roles(), role) do
       true -> :ok
       false -> raise "Query permitter is configured incorrectly, :scoped key must be present for role #{role}."
     end
   end
 
-  defp validate_query_permitter!(_config, _authorization) do
+  def validate_query_auth_config!(_config, _authorization) do
     raise "Query permitter is configured incorrectly, :permit key must be present."
   end
+
+  def add_object_authorization([{{QueryAuthorization, :call}, _} = query_authorization | middleware]) do
+    [query_authorization, ObjectAuthorization] ++ middleware
+  end
+
+  def add_object_authorization(middleware), do: [ObjectAuthorization | middleware]
 end

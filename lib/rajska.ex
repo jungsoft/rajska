@@ -104,5 +104,6 @@ defmodule Rajska do
     raise "Rajska authorization module not found in Absinthe's context"
   end
 
-  defdelegate add_authentication_middleware(middleware, field, authorization), to: Rajska.Schema
+  defdelegate add_query_authorization(middleware, field, authorization), to: Rajska.Schema
+  defdelegate add_object_authorization(middleware), to: Rajska.Schema
 end

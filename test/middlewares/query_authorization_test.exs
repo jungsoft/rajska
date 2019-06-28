@@ -14,7 +14,7 @@ defmodule Rajska.QueryAuthorizationTest do
 
     def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
     when identifier in [:query, :mutation, :subscription] do
-      Rajska.add_authentication_middleware(middleware, field, Authorization)
+      Rajska.add_query_authorization(middleware, field, Authorization)
     end
 
     def middleware(middleware, _field, _object), do: middleware
