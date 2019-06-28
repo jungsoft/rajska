@@ -33,7 +33,7 @@ defmodule Rajska.FieldAuthorization do
   defp authorized?(_resolution, false, _scope_by, _source), do: true
 
   defp authorized?(resolution, private, scope_by, source) do
-    case Rajska.is_super_user?(resolution) do
+    case Rajska.apply_auth_mod(resolution, :is_super_user?, [resolution]) do
       true -> resolution
       false -> is_user_authorized?(resolution, private, scope_by, source)
     end
@@ -42,7 +42,7 @@ defmodule Rajska.FieldAuthorization do
   defp is_user_authorized?(_resolution, private, _scope_by, source) when is_function(private), do: private.(source)
 
   defp is_user_authorized?(resolution, true, scope_by, source) do
-    current_user = Rajska.get_current_user(resolution)
+    current_user = Rajska.apply_auth_mod(resolution, :get_current_user, [resolution])
     current_user_id = current_user && Map.get(current_user, :id)
 
     current_user_id === Map.get(source, scope_by)

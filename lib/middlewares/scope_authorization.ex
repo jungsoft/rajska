@@ -12,7 +12,9 @@ defmodule Rajska.ScopeAuthorization do
   def call(resolution, [_ | [scoped: false]]), do: resolution
 
   def call(resolution, [{:permit, permission} | scoped_config]) do
-    case Enum.member?(Rajska.not_scoped_roles(), permission) do
+    not_scoped_roles = Rajska.apply_auth_mod(resolution, :not_scoped_roles)
+
+    case Enum.member?(not_scoped_roles, permission) do
       true -> resolution
       false -> scope_user(resolution, scoped_config)
     end
@@ -51,8 +53,8 @@ defmodule Rajska.ScopeAuthorization do
   end
 
   def apply_scope_authorization(resolution, id, schema) do
-    :validate_scoped_query
-    |> Rajska.apply_config_mod([schema, id, resolution])
+    resolution
+    |> Rajska.apply_auth_mod(:validate_scoped_query, [schema, id, resolution])
     |> update_result(resolution)
   end
 

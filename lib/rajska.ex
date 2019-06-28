@@ -6,9 +6,12 @@ defmodule Rajska do
   alias Absinthe.Resolution
 
   defmacro __using__(opts \\ []) do
-    all_role = Keyword.get(opts, :all_role, :all)
-    roles = Keyword.get(opts, :roles, Application.get_env(__MODULE__, :roles))
+    otp_app = Keyword.get(opts, :otp_app)
+    global_config = Application.get_env(otp_app, __MODULE__, [])
+    all_role = Keyword.get(opts, :all_role, global_config[:all_role]) || :all
+    roles = Keyword.get(opts, :roles, global_config[:roles])
     roles_with_tier = add_tier_to_roles(roles)
+    roles_names = get_role_names(roles)
     super_roles = get_super_roles(roles_with_tier)
 
     quote do
@@ -34,6 +37,18 @@ defmodule Rajska do
         |> get_user_role()
       end
 
+      def user_role_names, do: unquote(roles_names)
+
+      def valid_roles, do: [:all | user_role_names()]
+
+      def not_scoped_roles, do: [:all | unquote(super_roles)]
+
+      def is_super_user?(%Resolution{} = resolution) do
+        resolution
+        |> get_user_role()
+        |> is_super_role?()
+      end
+
       def is_authorized?(_resolution, unquote(all_role)), do: true
 
       def is_authorized?(%Resolution{} = resolution, allowed_role) do
@@ -55,53 +70,21 @@ defmodule Rajska do
     end
   end
 
-  def get_app_name do
-    {:ok, otp_app} = :application.get_application(__MODULE__)
-    otp_app
-  end
-
-  def add_tier_to_roles(roles) do
+  def add_tier_to_roles(roles) when is_list(roles) do
     case Keyword.keyword?(roles) do
       true -> roles
       false -> Enum.with_index(roles, 1)
     end
   end
 
-  def apply_config_mod(fnc_name, args \\ []) do
-    __MODULE__
-    |> Application.get_env(:configurator)
-    |> apply(fnc_name, args)
+  def add_tier_to_roles(nil), do: raise "No roles configured in Rajska's authorization module"
+
+  def get_role_names(roles) when is_list(roles) do
+    case Keyword.keyword?(roles) do
+      true -> Enum.map(roles, fn {role, _tier} -> role end)
+      false -> roles
+    end
   end
-
-  def get_config(key) do
-    :config
-    |> apply_config_mod([])
-    |> Keyword.get(key)
-  end
-
-  def get_schema, do: get_config(:schema)
-
-  def user_roles, do: get_config(:roles)
-
-  def user_role_names do
-    Enum.map(user_roles(), fn {role, _} -> role end)
-  end
-
-  def valid_roles, do: [:all | user_role_names()]
-
-  def get_current_user(resolution) do
-    apply_config_mod(:get_current_user, [resolution])
-  end
-
-  def get_user_role(resolution) do
-    apply_config_mod(:get_user_role, [get_current_user(resolution)])
-  end
-
-  def is_super_user?(%Resolution{} = resolution) do
-    apply_config_mod(:is_super_role?, [get_user_role(resolution)])
-  end
-
-  def get_super_roles, do: get_super_roles(user_roles())
 
   def get_super_roles(roles) do
     {_, max_tier} = Enum.max_by(roles, fn {_, tier} -> tier end)
@@ -111,9 +94,15 @@ defmodule Rajska do
     |> Enum.map(fn {role, _} -> role end)
   end
 
-  def not_scoped_roles, do: [:all | get_super_roles()]
+  def apply_auth_mod(resolution, fnc_name, args \\ [])
 
-  def unauthorized_msg, do: apply_config_mod(:unauthorized_msg)
+  def apply_auth_mod(%{context: %{authorization: authorization}}, fnc_name, args) do
+    apply(authorization, fnc_name, args)
+  end
 
-  defdelegate add_authentication_middleware(middleware, field), to: Rajska.Schema
+  def apply_auth_mod(_resolution, _fnc_name, _args) do
+    raise "Rajska authorization module not found in Absinthe's context"
+  end
+
+  defdelegate add_authentication_middleware(middleware, field, authorization), to: Rajska.Schema
 end

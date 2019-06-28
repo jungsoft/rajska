@@ -20,17 +20,17 @@ defmodule Rajska.ObjectAuthorization do
 
   defp authorize(type, fields, resolution) do
     type
-    |> lookup_object()
+    |> lookup_object(resolution.schema)
     |> authorize_object(fields, resolution)
   end
 
   # When is a list, inspect object that composes the list.
-  defp lookup_object(%Type.List{of_type: object_type}) do
-    lookup_object(object_type)
+  defp lookup_object(%Type.List{of_type: object_type}, schema) do
+    lookup_object(object_type, schema)
   end
 
-  defp lookup_object(object_type) do
-    Schema.lookup_type(Rajska.get_schema(), object_type)
+  defp lookup_object(object_type, schema) do
+    Schema.lookup_type(schema, object_type)
   end
 
   # When is a Scalar, Custom or Enum type, authorize.
@@ -50,7 +50,7 @@ defmodule Rajska.ObjectAuthorization do
   defp is_authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 
   defp is_authorized?(permission, resolution, _object) do
-    Rajska.apply_config_mod(:is_authorized?, [resolution, permission])
+    Rajska.apply_auth_mod(resolution, :is_authorized?, [resolution, permission])
   end
 
   defp put_result(true, fields, resolution, _type), do: find_associations(fields, resolution)
