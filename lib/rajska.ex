@@ -9,6 +9,7 @@ defmodule Rajska do
     all_role = Keyword.get(opts, :all_role, :all)
     roles = Keyword.get(opts, :roles, Application.get_env(__MODULE__, :roles))
     roles_with_tier = add_tier_to_roles(roles)
+    super_roles = get_super_roles(roles_with_tier)
 
     quote do
       @spec config() :: Keyword.t()
@@ -17,6 +18,9 @@ defmodule Rajska do
       end
 
       def get_all_role, do: config()[:all_role]
+
+      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
+      def is_super_role?(_user_role), do: false
 
       def get_current_user(%{context: %{current_user: current_user}}), do: current_user
 
@@ -27,16 +31,20 @@ defmodule Rajska do
       def get_user_role(%Resolution{} = resolution) do
         resolution
         |> get_current_user()
-        |> get_user_role
+        |> get_user_role()
       end
 
       def is_authorized?(_resolution, unquote(all_role)), do: true
 
-      def is_authorized?(resolution, allowed_role) when is_atom(allowed_role) do
-        user_role = get_user_role(resolution)
-
-        Rajska.is_super_role?(user_role) || (user_role === allowed_role)
+      def is_authorized?(%Resolution{} = resolution, allowed_role) do
+        resolution
+        |> get_user_role()
+        |> is_authorized?(allowed_role)
       end
+
+      def is_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
+
+      def is_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
 
       def unauthorized_msg, do: "unauthorized"
 
@@ -79,7 +87,7 @@ defmodule Rajska do
     Enum.map(user_roles(), fn {role, _} -> role end)
   end
 
-  def valid_roles, do: user_role_names() ++ [:all]
+  def valid_roles, do: [:all | user_role_names()]
 
   def get_current_user(resolution) do
     apply_config_mod(:get_current_user, [resolution])
@@ -90,17 +98,12 @@ defmodule Rajska do
   end
 
   def is_super_user?(%Resolution{} = resolution) do
-    resolution
-    |> get_user_role()
-    |> is_super_role?()
+    apply_config_mod(:is_super_role?, [get_user_role(resolution)])
   end
 
-  def is_super_role?(user_role) when is_atom(user_role) do
-    Enum.member?(get_super_roles(), user_role)
-  end
+  def get_super_roles, do: get_super_roles(user_roles())
 
-  def get_super_roles do
-    roles = user_roles()
+  def get_super_roles(roles) do
     {_, max_tier} = Enum.max_by(roles, fn {_, tier} -> tier end)
 
     roles
