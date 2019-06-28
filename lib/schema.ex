@@ -17,18 +17,18 @@ defmodule Rajska.Schema do
     raise "No permission specified for query #{name}"
   end
 
-  def validate_query_permitter!([permit: _, scoped: false]), do: :ok
+  defp validate_query_permitter!([permit: _, scoped: false]), do: :ok
 
-  def validate_query_permitter!([permit: _, scoped: {schema, _field}]), do: schema.__schema__(:source)
+  defp validate_query_permitter!([permit: _, scoped: {schema, _field}]), do: schema.__schema__(:source)
 
-  def validate_query_permitter!([permit: _, scoped: schema]), do: schema.__schema__(:source)
+  defp validate_query_permitter!([permit: _, scoped: schema]), do: schema.__schema__(:source)
 
-  def validate_query_permitter!([permit: role]) do
+  defp validate_query_permitter!([permit: role]) do
     case Enum.member?(Rajska.not_scoped_roles(), role) do
       true -> :ok
       false -> raise "Query permitter is configured incorrectly, :scoped key must be present for role #{role}."
     end
   end
 
-  def validate_query_permitter!(_), do: raise "Query permitter is configured incorrectly, :permit key must be present."
+  defp validate_query_permitter!(_), do: raise "Query permitter is configured incorrectly, :permit key must be present."
 end

@@ -50,7 +50,7 @@ defmodule Rajska.ObjectAuthorization do
   defp is_authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 
   defp is_authorized?(permission, resolution, _object) do
-    Rajska.apply_config_module(:is_authorized?, [resolution, permission])
+    Rajska.apply_config_mod(:is_authorized?, [resolution, permission])
   end
 
   defp put_result(true, fields, resolution, _type), do: find_associations(fields, resolution)

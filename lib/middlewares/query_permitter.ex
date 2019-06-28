@@ -12,7 +12,7 @@ defmodule Rajska.QueryPermitter do
     validate_permission!(permission)
 
     :is_authorized?
-    |> Rajska.apply_config_module([resolution, permission])
+    |> Rajska.apply_config_mod([resolution, permission])
     |> update_result(resolution)
     |> ScopeAuthorization.call(scope_config)
   end

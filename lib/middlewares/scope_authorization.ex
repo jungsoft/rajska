@@ -52,7 +52,7 @@ defmodule Rajska.ScopeAuthorization do
 
   def apply_scope_authorization(resolution, id, schema) do
     :validate_scoped_query
-    |> Rajska.apply_config_module([schema, id, resolution])
+    |> Rajska.apply_config_mod([schema, id, resolution])
     |> update_result(resolution)
   end
 
