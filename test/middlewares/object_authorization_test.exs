@@ -100,6 +100,38 @@ defmodule Rajska.ObjectAuthorizationTest do
     ] == errors
   end
 
+  test "User query with user object works for user" do
+    {:ok, result} = Absinthe.run(user_query_with_user_object(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+
+    assert %{data: %{"userQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "User query with user object works for admin" do
+    {:ok, result} = Absinthe.run(user_query_with_user_object(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"userQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "User query with admin object fails for user" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(user_query_with_admin_object(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object wallet_balance",
+        path: ["userQuery"]
+      }
+    ] == errors
+  end
+
+  test "User query with admin object works for admin" do
+    {:ok, result} = Absinthe.run(user_query_with_admin_object(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"userQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   defp all_query do
     """
     {
@@ -128,7 +160,7 @@ defmodule Rajska.ObjectAuthorizationTest do
   defp user_query_with_user_object do
     """
     {
-      getUser {
+      userQuery {
         name
         email
         company { name }
@@ -140,7 +172,7 @@ defmodule Rajska.ObjectAuthorizationTest do
   defp user_query_with_admin_object do
     """
     {
-      getUser {
+      userQuery {
         name
         email
         company { name }
