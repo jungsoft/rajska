@@ -1,4 +1,4 @@
-defmodule Rajska.QueryPermitter do
+defmodule Rajska.QueryAuthorization do
   @moduledoc """
     Verifies if query is permitted according to user role.
   """
@@ -22,7 +22,7 @@ defmodule Rajska.QueryPermitter do
 
     unless permission_valid?(valid_roles, permitted_roles) do
       raise """
-        Invalid permission passed to QueryPermitter: #{inspect(permitted_roles)}.
+        Invalid permission passed to QueryAuthorization: #{inspect(permitted_roles)}.
         Allowed permission: #{inspect(valid_roles)}.
       """
     end

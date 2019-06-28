@@ -10,7 +10,7 @@ It provides the following middlewares:
 
 - ScopeAuthorization: scopes Absinthe's queries
 
-- QueryPermitter: validates if user can perform queries and mutations
+- QueryAuthorization: validates if user can perform queries and mutations
 
 Documentation can be found at [https://hexdocs.pm/rajska/](https://hexdocs.pm/rajska).
 

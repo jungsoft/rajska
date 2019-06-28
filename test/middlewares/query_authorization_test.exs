@@ -1,4 +1,4 @@
-defmodule Rajska.QueryPermitterTest do
+defmodule Rajska.QueryAuthorizationTest do
   use Absinthe.Case, async: false
 
   defmodule Authorization do
@@ -21,17 +21,17 @@ defmodule Rajska.QueryPermitterTest do
 
     query do
       field :all_query, :user do
-        middleware Rajska.QueryPermitter, permit: :all
+        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :user_query, :user do
-        middleware Rajska.QueryPermitter, [permit: :user, scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :admin_query, :user do
-        middleware Rajska.QueryPermitter, permit: :admin
+        middleware Rajska.QueryAuthorization, permit: :admin
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
     end

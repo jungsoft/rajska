@@ -20,11 +20,6 @@ defmodule Rajska do
         Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
       end
 
-      def get_all_role, do: config()[:all_role]
-
-      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
-      def is_super_role?(_user_role), do: false
-
       def get_current_user(%{context: %{current_user: current_user}}), do: current_user
 
       def get_user_role(%{role: role}), do: role
@@ -49,6 +44,9 @@ defmodule Rajska do
         |> is_super_role?()
       end
 
+      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
+      def is_super_role?(_user_role), do: false
+
       def is_authorized?(_resolution, unquote(all_role)), do: true
 
       def is_authorized?(%Resolution{} = resolution, allowed_role) do
@@ -65,6 +63,8 @@ defmodule Rajska do
 
       defoverridable  get_current_user: 1,
                       get_user_role: 1,
+                      is_super_user?: 1,
+                      is_super_role?: 1,
                       is_authorized?: 2,
                       unauthorized_msg: 0
     end

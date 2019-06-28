@@ -1,14 +1,14 @@
 defmodule Rajska.Schema do
   @moduledoc """
-    Adds QueryPermitter to Absinthe Middlewares and validate arguments passed to it
+    Adds QueryAuthorization to Absinthe Middlewares and validate arguments passed to it
   """
 
   alias Absinthe.Type.Field
 
-  alias Rajska.QueryPermitter
+  alias Rajska.QueryAuthorization
 
   def add_authentication_middleware(
-    [{{QueryPermitter, :call}, config} = query_permitter | middleware],
+    [{{QueryAuthorization, :call}, config} = query_permitter | middleware],
     _field,
     authorization
   ) do
