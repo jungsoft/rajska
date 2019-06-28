@@ -54,7 +54,7 @@ defmodule Rajska.ScopeAuthorization do
 
   def apply_scope_authorization(resolution, id, schema) do
     resolution
-    |> Rajska.apply_auth_mod(:validate_scoped_query, [schema, id, resolution])
+    |> Rajska.apply_auth_mod(:has_access?, [schema, id, resolution])
     |> update_result(resolution)
   end
 
@@ -72,4 +72,10 @@ defmodule Rajska.ScopeAuthorization do
   defp put_error(resolution, message), do: Resolution.put_result(resolution, {:error, message})
 
   defp replace_underscore(string) when is_binary(string), do: String.replace(string, "_", " ")
+
+  defp replace_underscore(atom) when is_atom(atom) do
+    atom
+    |> Atom.to_string()
+    |> replace_underscore()
+  end
 end
