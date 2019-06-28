@@ -34,7 +34,7 @@ defmodule Rajska.QueryPermitterTest do
         end
       end
 
-      field :user_scoped_query, :user do
+      field :user_query, :user do
         middleware Rajska.QueryPermitter, [permit: :user, scoped: false]
         resolve fn _, _ ->
           {:ok, %{name: "bob"}}
@@ -86,5 +86,55 @@ defmodule Rajska.QueryPermitterTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "User query fails for unauthenticated user" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(user_query(), __MODULE__.Schema, context: %{current_user: nil})
+    assert [
+      %{
+        locations: [%{column: 0, line: 1}],
+        message: "unauthorized",
+        path: ["userQuery"]
+      }
+    ] == errors
+  end
+
+  test "User query works for user" do
+    {:ok, result} = Absinthe.run(user_query(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+
+    assert %{data: %{"userQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "User query works for admin" do
+    {:ok, result} = Absinthe.run(user_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"userQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "All query works for unauthenticated user" do
+    {:ok, result} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: nil})
+
+    assert %{data: %{"allQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "All query works for user" do
+    {:ok, result} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+
+    assert %{data: %{"allQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "All query works for admin" do
+    {:ok, result} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"allQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   defp admin_query, do: "{ adminQuery { name email } }"
+
+  defp user_query, do: "{ userQuery { name email } }"
+
+  defp all_query, do: "{ allQuery { name email } }"
 end
