@@ -45,16 +45,18 @@ defmodule Rajska.ObjectAuthorizationTest do
       end
     end
 
-    object :company do
-      meta :authorize, :user
-
-      field :name, :string
-    end
-
     object :wallet_balance do
       meta :authorize, :admin
 
       field :total, :integer
+    end
+
+    object :company do
+      meta :authorize, :user
+
+      field :name, :string
+
+      field :wallet_balance, :wallet_balance
     end
 
     object :user do
@@ -64,7 +66,6 @@ defmodule Rajska.ObjectAuthorizationTest do
       field :name, :string
 
       field :company, :company
-      field :wallet_balance, :wallet_balance
     end
   end
 
@@ -175,8 +176,10 @@ defmodule Rajska.ObjectAuthorizationTest do
       userQuery {
         name
         email
-        company { name }
-        walletBalance { total }
+        company {
+          name
+          walletBalance { total }
+        }
       }
     }
     """
