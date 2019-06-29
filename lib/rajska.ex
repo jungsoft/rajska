@@ -73,6 +73,7 @@ defmodule Rajska do
                       is_super_user?: 1,
                       is_super_role?: 1,
                       is_authorized?: 2,
+                      is_field_authorized?: 3,
                       unauthorized_msg: 0
     end
   end
@@ -84,7 +85,9 @@ defmodule Rajska do
     end
   end
 
-  def add_tier_to_roles(nil), do: raise "No roles configured in Rajska's authorization module"
+  def add_tier_to_roles(nil) do
+    raise "No roles configured in Rajska's authorization module"
+  end
 
   def get_role_names(roles) when is_list(roles) do
     case Keyword.keyword?(roles) do
