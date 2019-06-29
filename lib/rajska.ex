@@ -59,6 +59,13 @@ defmodule Rajska do
 
       def is_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
 
+      def is_field_authorized?(resolution, scope_by, source) do
+        current_user = get_current_user(resolution)
+        current_user_id = current_user && Map.get(current_user, :id)
+
+        current_user_id === Map.get(source, scope_by)
+      end
+
       def unauthorized_msg, do: "unauthorized"
 
       defoverridable  get_current_user: 1,
@@ -106,4 +113,5 @@ defmodule Rajska do
 
   defdelegate add_query_authorization(middleware, field, authorization), to: Rajska.Schema
   defdelegate add_object_authorization(middleware), to: Rajska.Schema
+  defdelegate add_field_authorization(middleware, field, object), to: Rajska.Schema
 end

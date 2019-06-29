@@ -10,20 +10,22 @@ defmodule Rajska.FieldAuthorization do
     Type
   }
 
-  def call(resolution, [object: object, field: field]) do
-    is_private = Type.meta(object.fields[field], :private) || false
-    scope_by = get_scope_by_field(object, is_private)
+  def call(resolution, [object: %{fields: fields} = object, field: field]) do
+    is_field_private? = fields[field] |> Type.meta(:private) |> is_field_private?(resolution.source)
+    scope_by = get_scope_by_field(object, is_field_private?)
 
     resolution
-    |> authorized?(is_private, scope_by, resolution.source)
+    |> authorized?(is_field_private?, scope_by, resolution.source)
     |> put_result(resolution, field)
   end
 
+  defp is_field_private?(true, _source), do: true
+  defp is_field_private?(private, source) when is_function(private), do: private.(source)
+  defp is_field_private?(_private, _source), do: false
+
   defp get_scope_by_field(_object, false), do: :ok
 
-  defp get_scope_by_field(_object, private) when is_function(private), do: :ok
-
-  defp get_scope_by_field(object, true) do
+  defp get_scope_by_field(object, _private) do
     case Type.meta(object, :scope_by) do
       nil -> raise "No scope_by meta defined for object returned from query #{object.identifier}"
       scope_by_field when is_atom(scope_by_field) -> scope_by_field
@@ -32,20 +34,11 @@ defmodule Rajska.FieldAuthorization do
 
   defp authorized?(_resolution, false, _scope_by, _source), do: true
 
-  defp authorized?(resolution, private, scope_by, source) do
+  defp authorized?(resolution, true, scope_by, source) do
     case Rajska.apply_auth_mod(resolution, :is_super_user?, [resolution]) do
-      true -> resolution
-      false -> is_user_authorized?(resolution, private, scope_by, source)
+      true -> true
+      false -> Rajska.apply_auth_mod(resolution, :is_field_authorized?, [resolution, scope_by, source])
     end
-  end
-
-  defp is_user_authorized?(_resolution, private, _scope_by, source) when is_function(private), do: private.(source)
-
-  defp is_user_authorized?(resolution, true, scope_by, source) do
-    current_user = Rajska.apply_auth_mod(resolution, :get_current_user, [resolution])
-    current_user_id = current_user && Map.get(current_user, :id)
-
-    current_user_id === Map.get(source, scope_by)
   end
 
   defp put_result(true, resolution, _field), do: resolution

@@ -5,7 +5,11 @@ defmodule Rajska.Schema do
 
   alias Absinthe.Type.Field
 
-  alias Rajska.{ObjectAuthorization, QueryAuthorization}
+  alias Rajska.{
+    FieldAuthorization,
+    ObjectAuthorization,
+    QueryAuthorization
+  }
 
   def add_query_authorization(
     [{{QueryAuthorization, :call}, config} = query_authorization | middleware],
@@ -43,4 +47,8 @@ defmodule Rajska.Schema do
   end
 
   def add_object_authorization(middleware), do: [ObjectAuthorization | middleware]
+
+  def add_field_authorization(middleware, %{identifier: field}, object) do
+    [{{FieldAuthorization, :call}, object: object, field: field} | middleware]
+  end
 end

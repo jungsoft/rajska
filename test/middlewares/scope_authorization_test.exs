@@ -1,5 +1,5 @@
 defmodule Rajska.ScopeAuthorizationTest do
-  use Absinthe.Case, async: false
+  use Absinthe.Case, async: true
 
   defmodule User do
     defstruct [

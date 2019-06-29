@@ -1,5 +1,5 @@
 defmodule Rajska.ObjectAuthorizationTest do
-  use Absinthe.Case, async: false
+  use Absinthe.Case, async: true
 
   defmodule Authorization do
     use Rajska,
