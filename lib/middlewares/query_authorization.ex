@@ -1,6 +1,6 @@
 defmodule Rajska.QueryAuthorization do
   @moduledoc """
-    Verifies if query is permitted according to user role.
+    Absinthe middleware to ensure query permissions.
   """
   alias Absinthe.Resolution
 

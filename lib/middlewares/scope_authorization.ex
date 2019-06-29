@@ -1,6 +1,6 @@
 defmodule Rajska.ScopeAuthorization do
   @moduledoc """
-    Middleware to block access to private projects.
+    Absinthe middleware to ensure query scoping.
   """
 
   @behaviour Absinthe.Middleware

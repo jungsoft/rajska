@@ -1,6 +1,6 @@
 defmodule Rajska.ObjectAuthorization do
   @moduledoc """
-    Middleware to block access to private objects.
+    Absinthe middleware to ensure object permissions.
   """
 
   @behaviour Absinthe.Middleware

@@ -1,6 +1,6 @@
 defmodule Rajska.FieldAuthorization do
   @moduledoc """
-    Middleware to block access to private fields.
+    Absinthe middleware to ensure field permissions.
   """
 
   @behaviour Absinthe.Middleware

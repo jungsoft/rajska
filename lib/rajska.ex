@@ -1,6 +1,6 @@
 defmodule Rajska do
   @moduledoc """
-    Functions to get the current user role from Absinthe's Resolution and validate its permissions
+    Authorization module to ensure user permissions and scoping.
   """
 
   alias Absinthe.Resolution
@@ -114,6 +114,7 @@ defmodule Rajska do
     raise "Rajska authorization module not found in Absinthe's context"
   end
 
+  defdelegate add_middlewares(middleware, field, object, authorization), to: Rajska.Schema
   defdelegate add_query_authorization(middleware, field, authorization), to: Rajska.Schema
   defdelegate add_object_authorization(middleware), to: Rajska.Schema
   defdelegate add_field_authorization(middleware, field, object), to: Rajska.Schema
