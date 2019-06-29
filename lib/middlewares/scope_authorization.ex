@@ -1,6 +1,41 @@
 defmodule Rajska.ScopeAuthorization do
   @moduledoc """
-    Absinthe middleware to ensure query scoping.
+  Absinthe middleware to perform query scoping.
+
+  ## Usage
+
+  ```elixir
+  mutation do
+    field :create_user, :user do
+      arg :params, non_null(:user_params)
+
+      middleware Rajska.QueryAuthorization, permit: :all
+      resolve &AccountsResolver.create_user/2
+    end
+
+    field :update_user, :user do
+      arg :id, non_null(:integer)
+      arg :params, non_null(:user_params)
+
+      middleware Rajska.QueryAuthorization, [permit: :user, scoped: User] # same as {User, :id}
+      resolve &AccountsResolver.update_user/2
+    end
+
+    field :delete_user, :user do
+      arg :id, non_null(:integer)
+
+      middleware Rajska.QueryAuthorization, permit: :admin
+      resolve &AccountsResolver.delete_user/2
+    end
+  end
+  ```
+
+  In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska) function, but you can modify this behavior by overriding it.
+
+  Valid values for the `:scoped` keyword are:
+  - `false`: disables scoping
+  - `User`: will be passed to [has_access?/3](https://hexdocs.pm/rajska) and can be any module that implements a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska))
+  - `{User, :id}`: where `:id` is the query argument that will also be passed to [has_access?/3](https://hexdocs.pm/rajska)
   """
 
   @behaviour Absinthe.Middleware

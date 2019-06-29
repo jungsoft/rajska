@@ -1,6 +1,36 @@
 defmodule Rajska.QueryAuthorization do
   @moduledoc """
-    Absinthe middleware to ensure query permissions.
+  Absinthe middleware to ensure query permissions.
+
+  ## Usage
+
+  ```elixir
+  mutation do
+    field :create_user, :user do
+      arg :params, non_null(:user_params)
+
+      middleware Rajska.QueryAuthorization, permit: :all
+      resolve &AccountsResolver.create_user/2
+    end
+
+    field :update_user, :user do
+      arg :id, non_null(:integer)
+      arg :params, non_null(:user_params)
+
+      middleware Rajska.QueryAuthorization, [permit: :user, scoped: User] # same as {User, :id}
+      resolve &AccountsResolver.update_user/2
+    end
+
+    field :delete_user, :user do
+      arg :id, non_null(:integer)
+
+      middleware Rajska.QueryAuthorization, permit: :admin
+      resolve &AccountsResolver.delete_user/2
+    end
+  end
+  ```
+
+  Query authorization will call [is_authorized?/2](https://hexdocs.pm/rajska) to validate if the resolution is authorized to perform the requested query.
   """
   alias Absinthe.Resolution
 

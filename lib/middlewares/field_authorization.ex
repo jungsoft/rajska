@@ -1,6 +1,24 @@
 defmodule Rajska.FieldAuthorization do
   @moduledoc """
-    Absinthe middleware to ensure field permissions.
+  Absinthe middleware to ensure field permissions.
+
+  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska) function, which receives the [Absinthe resolution](https://hexdocs.pm/absinthe/Absinthe.Resolution.html), the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+
+  ## Usage
+
+  ```elixir
+  object :user do
+    meta :scope_by, :id
+
+    field :name, :string
+    field :is_email_public, :boolean
+
+    field :phone, :string, meta: [private: true]
+    field :email, :string, meta: [private: & !&1.is_email_public]
+  end
+  ```
+
+  As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of other object field.
   """
 
   @behaviour Absinthe.Middleware

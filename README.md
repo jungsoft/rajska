@@ -35,6 +35,8 @@ Create your authorization module, which will contain the logic to validate user 
   end
 ```
 
+Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or define your `roles` as a Keyword list in the format `[user: 0, admin: 1]`.
+
 Add your authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
 ```elixir
@@ -71,6 +73,8 @@ Middlewares usage can be found below.
 ### Query Authorization
 
 Ensures Absinthe's queries can only be accessed by determined users.
+
+Usage:
 
 ```elixir
   mutation do
@@ -114,7 +118,9 @@ Valid values for the `:scoped` keyword are:
 
 ### Object Authorization
 
-Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the permission defined in each object meta `authorize`:
+Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the permission defined in each object meta `authorize`.
+
+Usage:
 
 ```elixir
   object :wallet_balance do
@@ -161,6 +167,8 @@ Object Authorization middleware runs after Query Authorization middleware (if ad
 
 Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska) function, which receives the [Absinthe resolution](https://hexdocs.pm/absinthe/Absinthe.Resolution.html), the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
+Usage:
+
 ```elixir
   object :user do
     meta :scope_by, :id
@@ -172,6 +180,8 @@ Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema
     field :email, :string, meta: [private: & !&1.is_email_public]
   end
 ```
+
+As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of other object field.
 
 ## Related Projects
 

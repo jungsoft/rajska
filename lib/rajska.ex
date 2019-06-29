@@ -1,6 +1,67 @@
 defmodule Rajska do
   @moduledoc """
-    Authorization module to ensure user permissions and scoping.
+  Rajska is an elixir authorization library for [Absinthe](https://github.com/absinthe-graphql/absinthe).
+
+  It provides the following middlewares:
+  - `Rajska.QueryAuthorization`
+  - `Rajska.ScopeAuthorization`
+  - `Rajska.ObjectAuthorization`
+  - `Rajska.FieldAuthorization`
+
+  ## Installation
+
+  The package can be installed by adding `rajska` to your list of dependencies in `mix.exs`:
+
+  ```elixir
+  def deps do
+    [
+      {:rajska, "~> 0.0.1"},
+    ]
+  end
+  ```
+
+  ## Usage
+
+  Create your authorization module, which will contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_authorized?/2](https://hexdocs.pm/rajska), [has_access?/3](https://hexdocs.pm/rajska) and [is_field_authorized?/3](https://hexdocs.pm/rajska), but you can override them with your application needs.
+
+  ```elixir
+  defmodule Authorization do
+    use Rajska,
+      otp_app: :my_app,
+      roles: [:user, :admin]
+  end
+  ```
+
+  Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
+
+  Add your authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
+
+  ```elixir
+  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+  def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
+  when identifier in [:query, :mutation, :subscription] do
+    middleware
+    |> Rajska.add_query_authorization(field, Authorization)
+    |> Rajska.add_object_authorization()
+  end
+
+  def middleware(middleware, field, object) do
+    Rajska.add_field_authorization(middleware, field, object)
+  end
+  ```
+
+  You can also add all Rajska middlewares at once by calling [add_middlewares/3](https://hexdocs.pm/rajska):
+
+  ```elixir
+  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+  def middleware(middleware, field, object) do
+    Rajska.add_middlewares(middleware, field, object, Authorization)
+  end
+  ```
+
+  Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
   """
 
   alias Absinthe.Resolution

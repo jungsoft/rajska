@@ -1,6 +1,51 @@
 defmodule Rajska.ObjectAuthorization do
   @moduledoc """
-    Absinthe middleware to ensure object permissions.
+  Absinthe middleware to ensure object permissions.
+
+  Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the permission defined in each object meta `authorize`.
+
+  ## Usage
+
+  ```elixir
+  object :wallet_balance do
+    meta :authorize, :admin
+
+    field :total, :integer
+  end
+
+  object :company do
+    meta :authorize, :user
+
+    field :name, :string
+
+    field :wallet_balance, :wallet_balance
+  end
+
+  object :user do
+    meta :authorize, :all
+
+    field :email, :string
+
+    field :company, :company
+  end
+  ```
+
+  With the permissions above, a query like the following would only be allowed by an admin user:
+
+  ```graphql
+  {
+    userQuery {
+      name
+      email
+      company {
+        name
+        walletBalance { total }
+      }
+    }
+  }
+  ```
+
+  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_authorized?/2](https://hexdocs.pm/rajska) function (which is also used by Query Authorization). It can be overridden by your own implementation.
   """
 
   @behaviour Absinthe.Middleware
