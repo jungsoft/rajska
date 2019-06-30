@@ -65,6 +65,8 @@ defmodule Rajska do
 
   alias Absinthe.Resolution
 
+  alias Rajska.Authorization
+
   defmacro __using__(opts \\ []) do
     all_role = Keyword.get(opts, :all_role, :all)
     roles = Keyword.get(opts, :roles)
@@ -73,6 +75,8 @@ defmodule Rajska do
     super_roles = get_super_roles(roles_with_tier)
 
     quote do
+      @behaviour Authorization
+
       @spec config() :: Keyword.t()
       def config do
         Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
@@ -124,12 +128,7 @@ defmodule Rajska do
         |> is_field_authorized?(scope_by, source)
       end
 
-      defoverridable  get_current_user: 1,
-                      get_user_role: 1,
-                      is_super_role?: 1,
-                      is_role_authorized?: 2,
-                      is_field_authorized?: 3,
-                      unauthorized_msg: 0
+      defoverridable Authorization
     end
   end
 
