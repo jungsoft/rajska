@@ -27,7 +27,6 @@ defmodule Rajska do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      otp_app: :my_app,
       roles: [:user, :admin]
   end
   ```
@@ -67,11 +66,9 @@ defmodule Rajska do
   alias Absinthe.Resolution
 
   defmacro __using__(opts \\ []) do
-    otp_app = Keyword.get(opts, :otp_app)
-    global_config = Application.get_env(otp_app, __MODULE__, [])
-    all_role = Keyword.get(opts, :all_role, global_config[:all_role]) || :all
-    roles = Keyword.get(opts, :roles, global_config[:roles])
-    roles_with_tier = add_tier_to_roles(roles)
+    all_role = Keyword.get(opts, :all_role, :all)
+    roles = Keyword.get(opts, :roles)
+    roles_with_tier = add_tier_to_roles!(roles)
     roles_names = get_role_names(roles)
     super_roles = get_super_roles(roles_with_tier)
 
@@ -139,14 +136,14 @@ defmodule Rajska do
     end
   end
 
-  def add_tier_to_roles(roles) when is_list(roles) do
+  def add_tier_to_roles!(roles) when is_list(roles) do
     case Keyword.keyword?(roles) do
       true -> roles
       false -> Enum.with_index(roles, 1)
     end
   end
 
-  def add_tier_to_roles(nil) do
+  def add_tier_to_roles!(nil) do
     raise "No roles configured in Rajska's authorization module"
   end
 

@@ -30,7 +30,6 @@ Create your authorization module, which will contain the logic to validate user 
 ```elixir
   defmodule Authorization do
     use Rajska,
-      otp_app: :my_app,
       roles: [:user, :admin]
   end
 ```

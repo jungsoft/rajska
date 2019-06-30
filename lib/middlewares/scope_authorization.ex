@@ -51,23 +51,27 @@ defmodule Rajska.ScopeAuthorization do
 
     case Enum.member?(not_scoped_roles, permission) do
       true -> resolution
-      false -> scope_user(resolution, scoped_config)
+      false -> scope_user!(resolution, scoped_config)
     end
   end
 
-  def scope_user(%{source: source} = resolution, scoped: :source) do
+  def scope_user!(%{source: source} = resolution, scoped: :source) do
     apply_scope_authorization(resolution, source.id, source.__struct__)
   end
 
-  def scope_user(%{arguments: args} = resolution, scoped: {schema, field}) do
+  def scope_user!(%{source: source} = resolution, scoped: {:source, field}) do
+    apply_scope_authorization(resolution, Map.get(source, field), source.__struct__)
+  end
+
+  def scope_user!(%{arguments: args} = resolution, scoped: {schema, field}) do
     apply_scope_authorization(resolution, Map.get(args, field), schema)
   end
 
-  def scope_user(%{arguments: args} = resolution, scoped: schema) do
+  def scope_user!(%{arguments: args} = resolution, scoped: schema) do
     apply_scope_authorization(resolution, Map.get(args, :id), schema)
   end
 
-  def scope_user(
+  def scope_user!(
     %{
       definition: %{
         name: name,
@@ -79,7 +83,7 @@ defmodule Rajska.ScopeAuthorization do
     raise "Error in query #{name}: Scope Authorization can't be used with a list query object type"
   end
 
-  def scope_user(%{definition: %{name: name}}, _) do
+  def scope_user!(%{definition: %{name: name}}, _) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
 
