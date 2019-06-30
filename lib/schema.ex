@@ -48,13 +48,17 @@ defmodule Rajska.Schema do
 
   def validate_query_auth_config!([permit: _, scoped: false], _authorization), do: :ok
 
-  def validate_query_auth_config!([permit: _, scoped: {:source, _field}], _authorization), do: :ok
-
-  def validate_query_auth_config!([permit: _, scoped: {schema, _field}], _authorization), do: schema.__schema__(:source)
-
   def validate_query_auth_config!([permit: _, scoped: :source], _authorization), do: :ok
 
-  def validate_query_auth_config!([permit: _, scoped: schema], _authorization), do: schema.__schema__(:source)
+  def validate_query_auth_config!([permit: _, scoped: {:source, _scoped_field}], _authorization), do: :ok
+
+  def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field}], _authorization) do
+    scoped_struct.__schema__(:source)
+  end
+
+  def validate_query_auth_config!([permit: _, scoped: scoped_struct], _authorization) do
+    scoped_struct.__schema__(:source)
+  end
 
   def validate_query_auth_config!([permit: role], authorization) do
     case Enum.member?(authorization.not_scoped_roles(), role) do

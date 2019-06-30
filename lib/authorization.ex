@@ -8,9 +8,6 @@ defmodule Rajska.Authorization do
   @type current_user :: any()
   @type role :: atom()
   @type current_user_role :: role
-  @type allowed_role :: role
-  @type scope_by :: atom()
-  @type source :: map()
 
   @callback get_current_user(Resolution.t) :: current_user
 
@@ -18,9 +15,11 @@ defmodule Rajska.Authorization do
 
   @callback is_super_role?(role) :: boolean()
 
-  @callback is_role_authorized?(current_user_role, allowed_role) :: boolean()
+  @callback is_role_authorized?(current_user_role, allowed_role :: role) :: boolean()
 
-  @callback is_field_authorized?(current_user_role, scope_by, source) :: boolean()
+  @callback is_field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
+
+  @callback has_user_access?(current_user, scoped_struct :: module(), field_value :: any()) :: boolean()
 
   @callback unauthorized_msg :: String.t()
 
@@ -29,5 +28,6 @@ defmodule Rajska.Authorization do
                       is_super_role?: 1,
                       is_role_authorized?: 2,
                       is_field_authorized?: 3,
+                      has_user_access?: 3,
                       unauthorized_msg: 0
 end

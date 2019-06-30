@@ -59,16 +59,16 @@ defmodule Rajska.ScopeAuthorization do
     apply_scope_authorization(resolution, source.id, source.__struct__)
   end
 
-  def scope_user!(%{source: source} = resolution, scoped: {:source, field}) do
-    apply_scope_authorization(resolution, Map.get(source, field), source.__struct__)
+  def scope_user!(%{source: source} = resolution, scoped: {:source, scoped_field}) do
+    apply_scope_authorization(resolution, Map.get(source, scoped_field), source.__struct__)
   end
 
-  def scope_user!(%{arguments: args} = resolution, scoped: {schema, field}) do
-    apply_scope_authorization(resolution, Map.get(args, field), schema)
+  def scope_user!(%{arguments: args} = resolution, scoped: {scoped_struct, scoped_field}) do
+    apply_scope_authorization(resolution, Map.get(args, scoped_field), scoped_struct)
   end
 
-  def scope_user!(%{arguments: args} = resolution, scoped: schema) do
-    apply_scope_authorization(resolution, Map.get(args, :id), schema)
+  def scope_user!(%{arguments: args} = resolution, scoped: scoped_struct) do
+    apply_scope_authorization(resolution, Map.get(args, :id), scoped_struct)
   end
 
   def scope_user!(
@@ -83,17 +83,17 @@ defmodule Rajska.ScopeAuthorization do
     raise "Error in query #{name}: Scope Authorization can't be used with a list query object type"
   end
 
-  def scope_user!(%{definition: %{name: name}}, _) do
+  def scope_user!(%{definition: %{name: name}}, _scoped_config) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
 
-  def apply_scope_authorization(%{definition: %{name: name}}, nil, _schema) do
+  def apply_scope_authorization(%{definition: %{name: name}}, nil, _scoped_struct) do
     raise "Error in query #{name}: no argument found in middleware Scope Authorization"
   end
 
-  def apply_scope_authorization(resolution, id, schema) do
+  def apply_scope_authorization(resolution, field_value, scoped_struct) do
     resolution
-    |> Rajska.apply_auth_mod(:has_access?, [schema, id, resolution])
+    |> Rajska.apply_auth_mod(:has_resolution_access?, [resolution, scoped_struct, field_value])
     |> update_result(resolution)
   end
 

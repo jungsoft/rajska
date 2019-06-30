@@ -98,13 +98,18 @@ defmodule Rajska do
       def is_super_role?(_user_role), do: false
 
       def is_role_authorized?(_user_role, unquote(all_role)), do: true
-
       def is_role_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
-
       def is_role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
 
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
+
+      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value) do
+        is_super_user? = current_user |> get_user_role() |> is_super_role?()
+        is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
+
+        is_super_user? || is_owner?
+      end
 
       def unauthorized_msg, do: "unauthorized"
 
@@ -126,6 +131,12 @@ defmodule Rajska do
         resolution
         |> get_current_user()
         |> is_field_authorized?(scope_by, source)
+      end
+
+      def has_resolution_access?(%Resolution{} = resolution, scoped_struct, field_value) do
+        resolution
+        |> get_current_user()
+        |> has_user_access?(scoped_struct, field_value)
       end
 
       defoverridable Authorization
