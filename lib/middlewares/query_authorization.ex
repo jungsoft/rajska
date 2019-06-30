@@ -42,7 +42,7 @@ defmodule Rajska.QueryAuthorization do
     validate_permission!(resolution, permission)
 
     resolution
-    |> Rajska.apply_auth_mod(:is_authorized?, [resolution, permission])
+    |> Rajska.apply_auth_mod(:is_resolution_authorized?, [resolution, permission])
     |> update_result(resolution)
     |> ScopeAuthorization.call(config)
   end

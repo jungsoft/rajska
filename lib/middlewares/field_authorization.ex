@@ -55,7 +55,7 @@ defmodule Rajska.FieldAuthorization do
   defp authorized?(resolution, true, scope_by, source) do
     case Rajska.apply_auth_mod(resolution, :is_super_user?, [resolution]) do
       true -> true
-      false -> Rajska.apply_auth_mod(resolution, :is_field_authorized?, [resolution, scope_by, source])
+      false -> Rajska.apply_auth_mod(resolution, :is_resolution_field_authorized?, [resolution, scope_by, source])
     end
   end
 

@@ -84,53 +84,50 @@ defmodule Rajska do
 
       def get_user_role(nil), do: nil
 
-      def get_user_role(%Resolution{} = resolution) do
-        resolution
-        |> get_current_user()
-        |> get_user_role()
-      end
-
       def user_role_names, do: unquote(roles_names)
 
       def valid_roles, do: [:all | user_role_names()]
 
       def not_scoped_roles, do: [:all | unquote(super_roles)]
 
+      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
+      def is_super_role?(_user_role), do: false
+
+      def is_role_authorized?(_user_role, unquote(all_role)), do: true
+
+      def is_role_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
+
+      def is_role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
+
+      def is_field_authorized?(nil, _scope_by, _source), do: false
+      def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
+
+      def unauthorized_msg, do: "unauthorized"
+
       def is_super_user?(%Resolution{} = resolution) do
         resolution
+        |> get_current_user()
         |> get_user_role()
         |> is_super_role?()
       end
 
-      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
-      def is_super_role?(_user_role), do: false
-
-      def is_authorized?(_resolution, unquote(all_role)), do: true
-
-      def is_authorized?(%Resolution{} = resolution, allowed_role) do
+      def is_resolution_authorized?(%Resolution{} = resolution, allowed_role) do
         resolution
+        |> get_current_user()
         |> get_user_role()
-        |> is_authorized?(allowed_role)
+        |> is_role_authorized?(allowed_role)
       end
 
-      def is_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
-
-      def is_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
-
-      def is_field_authorized?(resolution, scope_by, source) do
-        current_user = get_current_user(resolution)
-        current_user_id = current_user && Map.get(current_user, :id)
-
-        current_user_id === Map.get(source, scope_by)
+      def is_resolution_field_authorized?(%Resolution{} = resolution, scope_by, source) do
+        resolution
+        |> get_current_user()
+        |> is_field_authorized?(scope_by, source)
       end
-
-      def unauthorized_msg, do: "unauthorized"
 
       defoverridable  get_current_user: 1,
                       get_user_role: 1,
-                      is_super_user?: 1,
                       is_super_role?: 1,
-                      is_authorized?: 2,
+                      is_role_authorized?: 2,
                       is_field_authorized?: 3,
                       unauthorized_msg: 0
     end
@@ -164,7 +161,7 @@ defmodule Rajska do
 
   def apply_auth_mod(resolution, fnc_name, args \\ [])
 
-  def apply_auth_mod(%{context: %{authorization: authorization}}, fnc_name, args) do
+  def apply_auth_mod(%Resolution{context: %{authorization: authorization}}, fnc_name, args) do
     apply(authorization, fnc_name, args)
   end
 
