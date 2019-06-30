@@ -48,7 +48,11 @@ defmodule Rajska.Schema do
 
   def validate_query_auth_config!([permit: _, scoped: false], _authorization), do: :ok
 
+  def validate_query_auth_config!([permit: _, scoped: {:source, _field}], _authorization), do: :ok
+
   def validate_query_auth_config!([permit: _, scoped: {schema, _field}], _authorization), do: schema.__schema__(:source)
+
+  def validate_query_auth_config!([permit: _, scoped: :source], _authorization), do: :ok
 
   def validate_query_auth_config!([permit: _, scoped: schema], _authorization), do: schema.__schema__(:source)
 
