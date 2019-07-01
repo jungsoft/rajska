@@ -6,6 +6,8 @@ defmodule Rajska.ObjectAuthorization do
 
   ## Usage
 
+  [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the permitted role to access an object:
+
   ```elixir
   object :wallet_balance do
     meta :authorize, :admin
@@ -45,7 +47,7 @@ defmodule Rajska.ObjectAuthorization do
   }
   ```
 
-  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_authorized?/2](https://hexdocs.pm/rajska) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the `c:Rajska.Authorization.is_role_authorized?/2` function (which is also used by Query Authorization). It can be overridden by your own implementation.
   """
 
   @behaviour Absinthe.Middleware

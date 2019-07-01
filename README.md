@@ -168,7 +168,7 @@ Object Authorization middleware runs after Query Authorization middleware (if ad
 
 ### Field Authorization
 
-Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3) function, which receives the [Absinthe resolution](https://hexdocs.pm/absinthe/Absinthe.Resolution.html), the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
 Usage:
 
