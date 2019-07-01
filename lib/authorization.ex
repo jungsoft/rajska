@@ -13,7 +13,7 @@ defmodule Rajska.Authorization do
 
   @callback get_user_role(current_user) :: role
 
-  @callback not_scoped_roles() :: [role, ...]
+  @callback not_scoped_roles() :: list(role)
 
   @callback is_super_role?(role) :: boolean()
 
