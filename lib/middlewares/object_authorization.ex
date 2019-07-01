@@ -6,6 +6,8 @@ defmodule Rajska.ObjectAuthorization do
 
   ## Usage
 
+  [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the permitted role to access an object:
+
   ```elixir
   object :wallet_balance do
     meta :authorize, :admin
@@ -45,7 +47,7 @@ defmodule Rajska.ObjectAuthorization do
   }
   ```
 
-  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_authorized?/2](https://hexdocs.pm/rajska) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the `c:Rajska.Authorization.is_role_authorized?/2` function (which is also used by Query Authorization). It can be overridden by your own implementation.
   """
 
   @behaviour Absinthe.Middleware
@@ -57,9 +59,9 @@ defmodule Rajska.ObjectAuthorization do
   }
   alias Type.{Custom, Scalar}
 
-  def call(%{state: :resolved} = resolution, _config), do: resolution
+  def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
-  def call(%{definition: definition} = resolution, _config) do
+  def call(%Resolution{definition: definition} = resolution, _config) do
     authorize(definition.schema_node.type, definition.selections, resolution)
   end
 
@@ -95,7 +97,7 @@ defmodule Rajska.ObjectAuthorization do
   defp is_authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 
   defp is_authorized?(permission, resolution, _object) do
-    Rajska.apply_auth_mod(resolution, :is_authorized?, [resolution, permission])
+    Rajska.apply_auth_mod(resolution, :is_resolution_authorized?, [resolution, permission])
   end
 
   defp put_result(true, fields, resolution, _type), do: find_associations(fields, resolution)

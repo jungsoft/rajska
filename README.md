@@ -25,19 +25,18 @@ end
 
 ## Usage
 
-Create your authorization module, which will contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_authorized?/2](https://hexdocs.pm/rajska), [has_access?/3](https://hexdocs.pm/rajska) and [is_field_authorized?/3](https://hexdocs.pm/rajska), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
     use Rajska,
-      otp_app: :my_app,
       roles: [:user, :admin]
   end
 ```
 
 Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or define your `roles` as a Keyword list in the format `[user: 0, admin: 1]`.
 
-Add your authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
+Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
 ```elixir
   def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -54,7 +53,7 @@ Add your authorization module to your `Absinthe.Schema` [context/1](https://hexd
   end
 ```
 
-You can also add all Rajska middlewares at once by calling [add_middlewares/3](https://hexdocs.pm/rajska):
+You can also add all Rajska middlewares at once by calling [add_middlewares/4](https://hexdocs.pm/rajska/Rajska.Schema.html#add_middlewares/4):
 
 ```elixir
   def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -75,6 +74,8 @@ Middlewares usage can be found below.
 Ensures Absinthe's queries can only be accessed by determined users.
 
 Usage:
+
+[Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](#usage). Then set the permitted role to access a query or mutation:
 
 ```elixir
   mutation do
@@ -102,25 +103,27 @@ Usage:
   end
 ```
 
-Query authorization will call [is_authorized?/2](https://hexdocs.pm/rajska) to validate if the resolution is authorized to perform the requested query.
+Query authorization will call [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
 
 ### Scope Authorization
 
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
-In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska) function, but you can modify this behavior by overriding it.
+In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function, but you can modify this behavior by overriding it.
 
 Valid values for the `:scoped` keyword are:
 
 - `false`: disables scoping
-- `User`: will be passed to [has_access?/3](https://hexdocs.pm/rajska) and can be any module that implements a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska))
-- `{User, :id}`: where `:id` is the query argument that will also be passed to [has_access?/3](https://hexdocs.pm/rajska)
+- `User`: a module that will be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). It must implement a [Authorization behaviour](https://hexdocs.pm/rajska/Rajska.Authorization.html) and a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska/Rajska.Schema.html#validate_query_auth_config!/2))
+- `{User, :id}`: where `:id` is the query argument that will also be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3)
 
 ### Object Authorization
 
 Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the permission defined in each object meta `authorize`.
 
 Usage:
+
+[Create your Authorization module and add it and ObjectAuthorization to your Absinthe.Schema](#usage). Then set the permitted role to access an object:
 
 ```elixir
   object :wallet_balance do
@@ -161,13 +164,15 @@ With the permissions above, a query like the following would only be allowed by 
 }
 ```
 
-Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_authorized?/2](https://hexdocs.pm/rajska) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
 
 ### Field Authorization
 
-Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska) function, which receives the [Absinthe resolution](https://hexdocs.pm/absinthe/Absinthe.Resolution.html), the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
 Usage:
+
+[Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](#usage). Then add the meta `scope_by` to an object and meta `private` to your sensitive fields:
 
 ```elixir
   object :user do
@@ -181,7 +186,7 @@ Usage:
   end
 ```
 
-As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of other object field.
+As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of another field.
 
 ## Related Projects
 

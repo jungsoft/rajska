@@ -2,9 +2,11 @@ defmodule Rajska.FieldAuthorization do
   @moduledoc """
   Absinthe middleware to ensure field permissions.
 
-  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska) function, which receives the [Absinthe resolution](https://hexdocs.pm/absinthe/Absinthe.Resolution.html), the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the `c:Rajska.Authorization.is_field_authorized?/3` function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
   ## Usage
+
+  [Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then add the meta `scope_by` to an object and meta `private` to your sensitive fields:
 
   ```elixir
   object :user do
@@ -18,7 +20,7 @@ defmodule Rajska.FieldAuthorization do
   end
   ```
 
-  As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of other object field.
+  As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of another field.
   """
 
   @behaviour Absinthe.Middleware
@@ -28,9 +30,9 @@ defmodule Rajska.FieldAuthorization do
     Type
   }
 
-  def call(resolution, [object: %{fields: fields} = object, field: field]) do
+  def call(resolution, [object: %Type.Object{fields: fields} = object, field: field]) do
     is_field_private? = fields[field] |> Type.meta(:private) |> is_field_private?(resolution.source)
-    scope_by = get_scope_by_field(object, is_field_private?)
+    scope_by = get_scope_by_field!(object, is_field_private?)
 
     resolution
     |> authorized?(is_field_private?, scope_by, resolution.source)
@@ -41,9 +43,9 @@ defmodule Rajska.FieldAuthorization do
   defp is_field_private?(private, source) when is_function(private), do: private.(source)
   defp is_field_private?(_private, _source), do: false
 
-  defp get_scope_by_field(_object, false), do: :ok
+  defp get_scope_by_field!(_object, false), do: :ok
 
-  defp get_scope_by_field(object, _private) do
+  defp get_scope_by_field!(object, _private) do
     case Type.meta(object, :scope_by) do
       nil -> raise "No scope_by meta defined for object returned from query #{object.identifier}"
       scope_by_field when is_atom(scope_by_field) -> scope_by_field
@@ -55,7 +57,7 @@ defmodule Rajska.FieldAuthorization do
   defp authorized?(resolution, true, scope_by, source) do
     case Rajska.apply_auth_mod(resolution, :is_super_user?, [resolution]) do
       true -> true
-      false -> Rajska.apply_auth_mod(resolution, :is_field_authorized?, [resolution, scope_by, source])
+      false -> Rajska.apply_auth_mod(resolution, :is_resolution_field_authorized?, [resolution, scope_by, source])
     end
   end
 

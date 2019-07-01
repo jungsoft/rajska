@@ -13,12 +13,11 @@ defmodule Rajska.ScopeAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      otp_app: :my_app,
       roles: [:user, :admin]
 
-    def has_access?(User, _id, %{context: %{current_user: %{role: :admin}}}), do: true
-    def has_access?(User, id, %{context: %{current_user: %{id: user_id}}}) when user_id === id, do: true
-    def has_access?(User, _id, _resolution), do: false
+    def has_user_access?(%{role: :admin}, User, _id), do: true
+    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id), do: false
   end
 
   defmodule Schema do

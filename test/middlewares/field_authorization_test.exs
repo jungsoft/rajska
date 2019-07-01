@@ -3,7 +3,6 @@ defmodule Rajska.FieldAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      otp_app: :my_app,
       roles: [:user, :admin]
   end
 

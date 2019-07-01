@@ -4,6 +4,8 @@ defmodule Rajska.QueryAuthorization do
 
   ## Usage
 
+  [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the permitted role to access a query or mutation:
+
   ```elixir
   mutation do
     field :create_user, :user do
@@ -30,7 +32,7 @@ defmodule Rajska.QueryAuthorization do
   end
   ```
 
-  Query authorization will call [is_authorized?/2](https://hexdocs.pm/rajska) to validate if the resolution is authorized to perform the requested query.
+  Query authorization will call `c:Rajska.Authorization.is_role_authorized?/2` to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
   """
   alias Absinthe.Resolution
 
@@ -42,7 +44,7 @@ defmodule Rajska.QueryAuthorization do
     validate_permission!(resolution, permission)
 
     resolution
-    |> Rajska.apply_auth_mod(:is_authorized?, [resolution, permission])
+    |> Rajska.apply_auth_mod(:is_resolution_authorized?, [resolution, permission])
     |> update_result(resolution)
     |> ScopeAuthorization.call(config)
   end
