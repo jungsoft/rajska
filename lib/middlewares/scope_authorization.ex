@@ -4,6 +4,8 @@ defmodule Rajska.ScopeAuthorization do
 
   ## Usage
 
+  [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former. Then set the scoped module and argument field:
+
   ```elixir
   mutation do
     field :create_user, :user do
@@ -30,12 +32,12 @@ defmodule Rajska.ScopeAuthorization do
   end
   ```
 
-  In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska) function, but you can modify this behavior by overriding it.
+  In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the `c:Rajska.Authorization.not_scoped_roles/0` function, but you can modify this behavior by overriding it.
 
   Valid values for the `:scoped` keyword are:
   - `false`: disables scoping
-  - `User`: will be passed to [has_access?/3](https://hexdocs.pm/rajska) and can be any module that implements a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska))
-  - `{User, :id}`: where `:id` is the query argument that will also be passed to [has_access?/3](https://hexdocs.pm/rajska)
+  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+  - `{User, :id}`: where `:id` is the query argument that will also be passed to `c:Rajska.Authorization.has_user_access?/3`
   """
 
   @behaviour Absinthe.Middleware
