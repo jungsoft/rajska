@@ -82,10 +82,9 @@ defmodule Rajska do
         Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
       end
 
-      def get_current_user(%{context: %{current_user: current_user}}), do: current_user
+      def get_current_user(%Resolution{context: %{current_user: current_user}}), do: current_user
 
       def get_user_role(%{role: role}), do: role
-
       def get_user_role(nil), do: nil
 
       def user_role_names, do: unquote(roles_names)
@@ -143,6 +142,7 @@ defmodule Rajska do
     end
   end
 
+  @doc false
   def add_tier_to_roles!(roles) when is_list(roles) do
     case Keyword.keyword?(roles) do
       true -> roles
@@ -154,6 +154,7 @@ defmodule Rajska do
     raise "No roles configured in Rajska's authorization module"
   end
 
+  @doc false
   def get_role_names(roles) when is_list(roles) do
     case Keyword.keyword?(roles) do
       true -> Enum.map(roles, fn {role, _tier} -> role end)
@@ -161,6 +162,7 @@ defmodule Rajska do
     end
   end
 
+  @doc false
   def get_super_roles(roles) do
     {_, max_tier} = Enum.max_by(roles, fn {_, tier} -> tier end)
 
@@ -169,6 +171,7 @@ defmodule Rajska do
     |> Enum.map(fn {role, _} -> role end)
   end
 
+  @doc false
   def apply_auth_mod(resolution, fnc_name, args \\ [])
 
   def apply_auth_mod(%Resolution{context: %{authorization: authorization}}, fnc_name, args) do

@@ -25,7 +25,7 @@ end
 
 ## Usage
 
-Create your authorization module, which will contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_authorized?/2](https://hexdocs.pm/rajska), [has_access?/3](https://hexdocs.pm/rajska) and [is_field_authorized?/3](https://hexdocs.pm/rajska), but you can override them with your application needs.
+Create your authorization module, which will contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska), [has_user_access?/3](https://hexdocs.pm/rajska) and [is_field_authorized?/3](https://hexdocs.pm/rajska), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -36,7 +36,7 @@ Create your authorization module, which will contain the logic to validate user 
 
 Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or define your `roles` as a Keyword list in the format `[user: 0, admin: 1]`.
 
-Add your authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
+Add your [authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
 ```elixir
   def context(ctx), do: Map.put(ctx, :authorization, Authorization)

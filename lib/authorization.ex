@@ -1,6 +1,6 @@
 defmodule Rajska.Authorization do
   @moduledoc """
-  Behaviour for an Authorization module.
+  Behaviour of an Authorization module.
   """
 
   alias Absinthe.Resolution
@@ -9,7 +9,7 @@ defmodule Rajska.Authorization do
   @type role :: atom()
   @type current_user_role :: role
 
-  @callback get_current_user(Resolution.t) :: current_user
+  @callback get_current_user(Resolution.t()) :: current_user
 
   @callback get_user_role(current_user) :: role
 

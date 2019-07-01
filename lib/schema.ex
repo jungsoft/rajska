@@ -1,9 +1,13 @@
 defmodule Rajska.Schema do
   @moduledoc """
-  Concatenates Rajska middlewares with Absinthe middlewares and validates Query Authorization configs
+  Concatenates Rajska middlewares with Absinthe middlewares and validates Query Authorization configuration.
   """
 
-  alias Absinthe.Type.{Field, Object}
+  alias Absinthe.Type.{
+    Field,
+    Middleware,
+    Object
+  }
 
   alias Rajska.{
     FieldAuthorization,
@@ -11,6 +15,12 @@ defmodule Rajska.Schema do
     QueryAuthorization
   }
 
+  @spec add_middlewares(
+    [Middleware.spec(), ...],
+    Field.t(),
+    Object.t(),
+    module()
+  ) :: [Middleware.spec(), ...]
   def add_middlewares(middleware, field, %Object{identifier: identifier}, authorization)
   when identifier in [:query, :mutation, :subscription] do
     middleware
@@ -22,8 +32,13 @@ defmodule Rajska.Schema do
     add_field_authorization(middleware, field, object)
   end
 
+  @spec add_query_authorization(
+    [Middleware.spec(), ...],
+    Field.t(),
+    module()
+  ) :: [Middleware.spec(), ...]
   def add_query_authorization(
-    [{{QueryAuthorization, :call}, config} = query_authorization | middleware],
+    [{{QueryAuthorization, :call}, config} = query_authorization | middleware] = _middleware,
     _field,
     authorization
   ) do
@@ -36,17 +51,30 @@ defmodule Rajska.Schema do
     raise "No permission specified for query #{name}"
   end
 
+  @spec add_object_authorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
   def add_object_authorization([{{QueryAuthorization, :call}, _} = query_authorization | middleware]) do
     [query_authorization, ObjectAuthorization] ++ middleware
   end
 
   def add_object_authorization(middleware), do: [ObjectAuthorization | middleware]
 
-  def add_field_authorization(middleware, %{identifier: field}, object) do
+  @spec add_field_authorization(
+    [Middleware.spec(), ...],
+    Field.t(),
+    Object.t()
+  ) :: [Middleware.spec(), ...]
+  def add_field_authorization(middleware, %Field{identifier: field}, object) do
     [{{FieldAuthorization, :call}, object: object, field: field} | middleware]
   end
 
-  def validate_query_auth_config!([permit: _, scoped: false], _authorization), do: :ok
+  @spec validate_query_auth_config!(
+    [
+      permit: atom(),
+      scoped: false | :source | {:source | module(), atom()}
+    ],
+    module()
+  ) :: :ok | Exception.t()
+  def validate_query_auth_config!([permit: _, scoped: false] = _config, _authorization), do: :ok
 
   def validate_query_auth_config!([permit: _, scoped: :source], _authorization), do: :ok
 

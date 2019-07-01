@@ -42,7 +42,7 @@ defmodule Rajska.ScopeAuthorization do
 
   alias Absinthe.{Resolution, Type}
 
-  def call(%{state: :resolved} = resolution, _config), do: resolution
+  def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
   def call(resolution, [_ | [scoped: false]]), do: resolution
 
@@ -55,24 +55,24 @@ defmodule Rajska.ScopeAuthorization do
     end
   end
 
-  def scope_user!(%{source: source} = resolution, scoped: :source) do
+  def scope_user!(%Resolution{source: source} = resolution, scoped: :source) do
     apply_scope_authorization(resolution, source.id, source.__struct__)
   end
 
-  def scope_user!(%{source: source} = resolution, scoped: {:source, scoped_field}) do
+  def scope_user!(%Resolution{source: source} = resolution, scoped: {:source, scoped_field}) do
     apply_scope_authorization(resolution, Map.get(source, scoped_field), source.__struct__)
   end
 
-  def scope_user!(%{arguments: args} = resolution, scoped: {scoped_struct, scoped_field}) do
+  def scope_user!(%Resolution{arguments: args} = resolution, scoped: {scoped_struct, scoped_field}) do
     apply_scope_authorization(resolution, Map.get(args, scoped_field), scoped_struct)
   end
 
-  def scope_user!(%{arguments: args} = resolution, scoped: scoped_struct) do
+  def scope_user!(%Resolution{arguments: args} = resolution, scoped: scoped_struct) do
     apply_scope_authorization(resolution, Map.get(args, :id), scoped_struct)
   end
 
   def scope_user!(
-    %{
+    %Resolution{
       definition: %{
         name: name,
         schema_node: %{type: %Type.List{of_type: _}}
@@ -83,11 +83,11 @@ defmodule Rajska.ScopeAuthorization do
     raise "Error in query #{name}: Scope Authorization can't be used with a list query object type"
   end
 
-  def scope_user!(%{definition: %{name: name}}, _scoped_config) do
+  def scope_user!(%Resolution{definition: %{name: name}}, _scoped_config) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
 
-  def apply_scope_authorization(%{definition: %{name: name}}, nil, _scoped_struct) do
+  def apply_scope_authorization(%Resolution{definition: %{name: name}}, nil, _scoped_struct) do
     raise "Error in query #{name}: no argument found in middleware Scope Authorization"
   end
 
@@ -101,7 +101,7 @@ defmodule Rajska.ScopeAuthorization do
 
   defp update_result(
     false,
-    %{definition: %{schema_node: %{type: object_type}}} = resolution
+    %Resolution{definition: %{schema_node: %{type: object_type}}} = resolution
   ) do
     put_error(resolution, "Not authorized to access this #{replace_underscore(object_type)}")
   end

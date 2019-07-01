@@ -28,7 +28,7 @@ defmodule Rajska.FieldAuthorization do
     Type
   }
 
-  def call(resolution, [object: %{fields: fields} = object, field: field]) do
+  def call(resolution, [object: %Type.Object{fields: fields} = object, field: field]) do
     is_field_private? = fields[field] |> Type.meta(:private) |> is_field_private?(resolution.source)
     scope_by = get_scope_by_field!(object, is_field_private?)
 

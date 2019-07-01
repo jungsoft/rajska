@@ -57,9 +57,9 @@ defmodule Rajska.ObjectAuthorization do
   }
   alias Type.{Custom, Scalar}
 
-  def call(%{state: :resolved} = resolution, _config), do: resolution
+  def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
-  def call(%{definition: definition} = resolution, _config) do
+  def call(%Resolution{definition: definition} = resolution, _config) do
     authorize(definition.schema_node.type, definition.selections, resolution)
   end
 
