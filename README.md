@@ -25,7 +25,7 @@ end
 
 ## Usage
 
-Create your authorization module, which will contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska), [has_user_access?/3](https://hexdocs.pm/rajska) and [is_field_authorized?/3](https://hexdocs.pm/rajska), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
