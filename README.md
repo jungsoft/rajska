@@ -42,7 +42,7 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
   def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
   def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
-  when identifier in [:query, :mutation, :subscription] do
+  when identifier in [:query, :mutation] do
     middleware
     |> Rajska.add_query_authorization(field, Authorization)
     |> Rajska.add_object_authorization()

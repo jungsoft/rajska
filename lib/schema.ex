@@ -22,7 +22,7 @@ defmodule Rajska.Schema do
     module()
   ) :: [Middleware.spec(), ...]
   def add_middlewares(middleware, field, %Object{identifier: identifier}, authorization)
-  when identifier in [:query, :mutation, :subscription] do
+  when identifier in [:query, :mutation] do
     middleware
     |> add_query_authorization(field, authorization)
     |> add_object_authorization()
