@@ -3,7 +3,7 @@ defmodule Rajska.QueryAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      roles: [:viewer, :user, :admin]
   end
 
   defmodule Schema do
@@ -26,6 +26,11 @@ defmodule Rajska.QueryAuthorizationTest do
 
       field :user_query, :user do
         middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
+        resolve fn _, _ -> {:ok, %{name: "bob"}} end
+      end
+
+      field :user_viewer_query, :user do
+        middleware Rajska.QueryAuthorization, [permit: [:viewer, :user], scoped: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
@@ -88,6 +93,13 @@ defmodule Rajska.QueryAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "User and viewer query works for both viewer and user" do
+    {:ok, result} = Absinthe.run(user_viewer_query(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+
+    assert %{data: %{"userViewerQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   test "User query works for admin" do
     {:ok, result} = Absinthe.run(user_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
 
@@ -119,6 +131,8 @@ defmodule Rajska.QueryAuthorizationTest do
   defp admin_query, do: "{ adminQuery { name email } }"
 
   defp user_query, do: "{ userQuery { name email } }"
+
+  defp user_viewer_query, do: "{ userViewerQuery { name email } }"
 
   defp all_query, do: "{ allQuery { name email } }"
 end
