@@ -71,6 +71,6 @@ defmodule Rajska.QueryAuthorization do
   defp update_result(true, resolution), do: resolution
 
   defp update_result(false, resolution) do
-    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(resolution, :unauthorized_msg)})
+    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(resolution, :unauthorized_msg, [resolution])})
   end
 end

@@ -113,7 +113,7 @@ defmodule Rajska do
         is_super_user? || is_owner?
       end
 
-      def unauthorized_msg, do: "unauthorized"
+      def unauthorized_msg(_resolution), do: "unauthorized"
 
       def is_super_user?(%Resolution{} = resolution) do
         resolution
