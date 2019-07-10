@@ -47,6 +47,20 @@ defmodule Rajska.ScopeAuthorizationTest do
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
+      field :custom_nested_arg_scoped_query, :user do
+        arg :params, non_null(:user_params)
+
+        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id]}]
+        resolve fn _, _ -> {:ok, %{name: "bob"}} end
+      end
+
+      field :custom_nested_optional_arg_scoped_query, :user do
+        arg :params, non_null(:user_params)
+
+        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id], :optional}]
+        resolve fn _, _ -> {:ok, %{name: "bob"}} end
+      end
+
       field :not_scoped_query, :user do
         arg :id, non_null(:integer)
 
@@ -58,6 +72,10 @@ defmodule Rajska.ScopeAuthorizationTest do
     object :user do
       field :email, :string
       field :name, :string
+    end
+
+    input_object :user_params do
+      field :id, :integer
     end
   end
 
@@ -105,6 +123,45 @@ defmodule Rajska.ScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "User scoped query with custom nested argument works for own user" do
+    user = %{role: :user, id: 1}
+    custom_nested_arg_scoped_query = custom_nested_arg_scoped_query(1)
+
+    {:ok, result} = Absinthe.run(custom_nested_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
+
+    assert %{data: %{"customNestedArgScopedQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "User scoped query with custom nested argument fails for own user if argument is not provided" do
+    user = %{role: :user, id: 1}
+    custom_nested_arg_scoped_query = custom_nested_arg_scoped_query(nil)
+
+    assert_raise RuntimeError, "Error in query customNestedArgScopedQuery: no argument found in middleware Scope Authorization", fn ->
+      Absinthe.run(custom_nested_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
+    end
+  end
+
+  test "User scoped query with custom optional nested argument works for own user if argument is not provided" do
+    user = %{role: :user, id: 1}
+    custom_nested_optional_arg_scoped_query = custom_nested_optional_arg_scoped_query(nil)
+
+    {:ok, result} = Absinthe.run(custom_nested_optional_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
+
+    assert %{data: %{"customNestedOptionalArgScopedQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "User scoped query with custom optional nested argument works for own user if argument is provided" do
+    user = %{role: :user, id: 1}
+    custom_nested_optional_arg_scoped_query = custom_nested_optional_arg_scoped_query(1)
+
+    {:ok, result} = Absinthe.run(custom_nested_optional_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
+
+    assert %{data: %{"customNestedOptionalArgScopedQuery" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   test "User scoped query with custom argument works for admin user" do
     user = %{role: :admin, id: 3}
     custom_arg_scoped_query = custom_arg_scoped_query(1)
@@ -125,6 +182,20 @@ defmodule Rajska.ScopeAuthorizationTest do
         locations: [%{column: 0, line: 1}],
         message: "Not authorized to access this user",
         path: ["customArgScopedQuery"]
+      }
+    ] == errors
+  end
+
+  test "User scoped query with custom nested argument fails for different user" do
+    user = %{role: :user, id: 2}
+    custom_nested_arg_scoped_query = custom_nested_arg_scoped_query(1)
+
+    assert {:ok, %{errors: errors}} = Absinthe.run(custom_nested_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
+    assert [
+      %{
+        locations: [%{column: 0, line: 1}],
+        message: "Not authorized to access this user",
+        path: ["customNestedArgScopedQuery"]
       }
     ] == errors
   end
@@ -157,6 +228,20 @@ defmodule Rajska.ScopeAuthorizationTest do
   def custom_arg_scoped_query(user_id) do
     """
     { customArgScopedQuery(userId: #{user_id}) { name email } }
+    """
+  end
+
+  def custom_nested_arg_scoped_query(user_id) do
+    user_id = if user_id == nil, do: "null", else: user_id
+    """
+    { customNestedArgScopedQuery(params: {id: #{user_id}}) { name email } }
+    """
+  end
+
+  def custom_nested_optional_arg_scoped_query(user_id) do
+    user_id = if user_id == nil, do: "null", else: user_id
+    """
+    { customNestedOptionalArgScopedQuery(params: {id: #{user_id}}) { name email } }
     """
   end
 
