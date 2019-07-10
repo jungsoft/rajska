@@ -17,6 +17,8 @@ defmodule Rajska.Authorization do
 
   @callback is_super_role?(role) :: boolean()
 
+  @callback is_all_role?(role) :: boolean()
+
   @callback is_role_authorized?(current_user_role, allowed_role :: role) :: boolean()
 
   @callback is_field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
@@ -29,6 +31,7 @@ defmodule Rajska.Authorization do
                       get_user_role: 1,
                       not_scoped_roles: 0,
                       is_super_role?: 1,
+                      is_all_role?: 1,
                       is_role_authorized?: 2,
                       is_field_authorized?: 3,
                       has_user_access?: 3,
