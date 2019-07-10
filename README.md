@@ -116,6 +116,8 @@ Valid values for the `:scoped` keyword are:
 - `false`: disables scoping
 - `User`: a module that will be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). It must implement a [Authorization behaviour](https://hexdocs.pm/rajska/Rajska.Authorization.html) and a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska/Rajska.Schema.html#validate_query_auth_config!/2))
 - `{User, :id}`: where `:id` is the query argument that will also be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3)
+- `{User, [:params, :id]}`: where `id` is the query argument as above, but it's not defined directly as an `arg` for the query. Instead, it's nested inside the `params` argument.
+- `{User, :user_group_id, :optional}`: where `user_group_id` (it could also be a nested argument) is an optional argument for the query. If it's present, the scoping will be applied, otherwise no scoping is applied.
 
 ### Object Authorization
 

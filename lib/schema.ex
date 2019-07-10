@@ -84,6 +84,10 @@ defmodule Rajska.Schema do
     scoped_struct.__schema__(:source)
   end
 
+  def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field, _opts}], _authorization) do
+    scoped_struct.__schema__(:source)
+  end
+
   def validate_query_auth_config!([permit: _, scoped: scoped_struct], _authorization) do
     scoped_struct.__schema__(:source)
   end
