@@ -22,7 +22,7 @@ defmodule Rajska.Schema do
     module()
   ) :: [Middleware.spec(), ...]
   def add_middlewares(middleware, field, %Object{identifier: identifier}, authorization)
-  when identifier in [:query, :mutation, :subscription] do
+  when identifier in [:query, :mutation] do
     middleware
     |> add_query_authorization(field, authorization)
     |> add_object_authorization()
@@ -81,6 +81,10 @@ defmodule Rajska.Schema do
   def validate_query_auth_config!([permit: _, scoped: {:source, _scoped_field}], _authorization), do: :ok
 
   def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field}], _authorization) do
+    scoped_struct.__schema__(:source)
+  end
+
+  def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field, _opts}], _authorization) do
     scoped_struct.__schema__(:source)
   end
 

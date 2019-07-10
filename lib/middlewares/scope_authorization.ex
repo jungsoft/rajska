@@ -38,6 +38,8 @@ defmodule Rajska.ScopeAuthorization do
   - `false`: disables scoping
   - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
   - `{User, :id}`: where `:id` is the query argument that will also be passed to `c:Rajska.Authorization.has_user_access?/3`
+  - `{User, [:params, :id]}`: where `id` is the query argument as above, but it's not defined directly as an `arg` for the query. Instead, it's nested inside the `params` argument.
+  - `{User, :user_group_id, :optional}`: where `user_group_id` (it could also be a nested argument) is an optional argument for the query. If it's present, the scoping will be applied, otherwise no scoping is applied.
   """
 
   @behaviour Absinthe.Middleware
@@ -58,19 +60,26 @@ defmodule Rajska.ScopeAuthorization do
   end
 
   def scope_user!(%Resolution{source: source} = resolution, scoped: :source) do
-    apply_scope_authorization(resolution, source.id, source.__struct__)
+    apply_scope_authorization(resolution, get_scoped_field_value(source, :id), source.__struct__)
   end
 
   def scope_user!(%Resolution{source: source} = resolution, scoped: {:source, scoped_field}) do
-    apply_scope_authorization(resolution, Map.get(source, scoped_field), source.__struct__)
+    apply_scope_authorization(resolution, get_scoped_field_value(source, scoped_field), source.__struct__)
   end
 
   def scope_user!(%Resolution{arguments: args} = resolution, scoped: {scoped_struct, scoped_field}) do
-    apply_scope_authorization(resolution, Map.get(args, scoped_field), scoped_struct)
+    apply_scope_authorization(resolution, get_scoped_field_value(args, scoped_field), scoped_struct)
+  end
+
+  def scope_user!(%Resolution{arguments: args} = resolution, scoped: {scoped_struct, scoped_field, :optional}) do
+    case get_scoped_field_value(args, scoped_field) do
+      nil -> update_result(true, resolution)
+      field_value -> apply_scope_authorization(resolution, field_value, scoped_struct)
+    end
   end
 
   def scope_user!(%Resolution{arguments: args} = resolution, scoped: scoped_struct) do
-    apply_scope_authorization(resolution, Map.get(args, :id), scoped_struct)
+    apply_scope_authorization(resolution, get_scoped_field_value(args, :id), scoped_struct)
   end
 
   def scope_user!(
@@ -88,6 +97,9 @@ defmodule Rajska.ScopeAuthorization do
   def scope_user!(%Resolution{definition: %{name: name}}, _scoped_config) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
+
+  defp get_scoped_field_value(args, fields) when is_list(fields), do: get_in(args, fields)
+  defp get_scoped_field_value(args, field) when is_atom(field), do: Map.get(args, field)
 
   def apply_scope_authorization(%Resolution{definition: %{name: name}}, nil, _scoped_struct) do
     raise "Error in query #{name}: no argument found in middleware Scope Authorization"

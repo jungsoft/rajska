@@ -93,12 +93,19 @@ defmodule Rajska do
 
       def not_scoped_roles, do: [:all | unquote(super_roles)]
 
-      def is_super_role?(user_role) when user_role in unquote(super_roles), do: true
+      defguard super_role?(role) when role in unquote(super_roles)
+      defguard all_role?(role) when role == unquote(all_role)
+
+      def is_super_role?(user_role) when super_role?(user_role), do: true
       def is_super_role?(_user_role), do: false
+
+      def is_all_role?(user_role) when all_role?(user_role), do: true
+      def is_all_role?(_user_role), do: false
 
       def is_role_authorized?(_user_role, unquote(all_role)), do: true
       def is_role_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
       def is_role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
+      def is_role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
@@ -110,7 +117,7 @@ defmodule Rajska do
         is_super_user? || is_owner?
       end
 
-      def unauthorized_msg, do: "unauthorized"
+      def unauthorized_msg(_resolution), do: "unauthorized"
 
       def is_super_user?(%Resolution{} = resolution) do
         resolution
