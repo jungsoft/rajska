@@ -1,4 +1,53 @@
 defmodule Rajska.ObjectScopeAuthorization do
+  @moduledoc """
+  Absinthe middleware to perform object scoping.
+
+  Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
+
+  ## Usage
+
+  [Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the scope of an object:
+
+  ```elixir
+  object :user do
+    meta :scope, User # Same as meta :scope, {User, :id}
+
+    field :id, :integer
+    field :email, :string
+    field :name, :string
+
+    field :company, :company
+  end
+
+  object :company do
+    meta :scope, {Company, :user_id}
+
+    field :id, :integer
+    field :user_id, :integer
+    field :name, :string
+    field :wallet, :wallet
+  end
+
+  object :wallet do
+    meta :scope, Wallet
+
+    field :total, :integer
+  end
+  ```
+
+  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
+
+  ```elixir
+  defmodule Authorization do
+    use Rajska,
+      roles: [:user, :admin]
+
+    def has_user_access?(%{role: :admin}, User, _id), do: true
+    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id), do: false
+  end
+  ```
+  """
   @behaviour Absinthe.Middleware
 
   alias Absinthe.{
