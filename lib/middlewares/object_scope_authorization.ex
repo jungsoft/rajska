@@ -75,6 +75,12 @@ defmodule Rajska.ObjectScopeAuthorization do
     Schema.lookup_type(schema, object_type)
   end
 
+  # When is a Scalar, Custom or Enum type, authorize.
+  defp authorize_object(%type{} = object, fields, resolution, nested_keys)
+  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value] do
+    put_result(true, fields, resolution, object, nested_keys)
+  end
+
   # When is an user defined object, lookup the scope meta tag.
   defp authorize_object(object, fields, resolution, nested_keys) do
     object
@@ -89,16 +95,29 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   defp is_authorized?({scoped_struct, field}, resolution, _object, nested_keys) do
     field_keys = nested_keys ++ [field]
-    apply_authorization!(resolution, scoped_struct, field_keys)
+    apply_authorization!(resolution, scoped_struct, Map.get(resolution, :value), field_keys)
   end
 
   defp is_authorized?(scoped_struct, resolution, _object, nested_keys) do
-    apply_authorization!(resolution, scoped_struct, nested_keys ++ [:id])
+    apply_authorization!(resolution, scoped_struct, Map.get(resolution, :value), nested_keys ++ [:id])
   end
 
-  defp apply_authorization!(resolution, scoped_struct, scoped_field_keys) do
-    scoped_field_value = resolution |> Map.get(:value) |> get_in(scoped_field_keys)
+  defp apply_authorization!(resolution, scoped_struct, value, [first_key | remaining_keys]) when length(remaining_keys) > 0 do
+    case Map.get(value, first_key) do
+      nested_value when is_map(nested_value) ->
+        apply_authorization!(resolution, scoped_struct, nested_value, remaining_keys)
 
+      values when is_list(values) ->
+        Enum.all?(values, fn value ->
+          apply_authorization!(resolution, scoped_struct, value, remaining_keys)
+        end)
+
+      nil -> Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, nil])
+    end
+  end
+
+  defp apply_authorization!(resolution, scoped_struct, value, [first_key]) do
+    scoped_field_value = Map.get(value, first_key)
     Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, scoped_field_value])
   end
 

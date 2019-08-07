@@ -72,6 +72,22 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           }}
         end
       end
+
+      field :all_query_companies_list, :user do
+        arg :user_id, non_null(:integer)
+
+        middleware Rajska.QueryAuthorization, permit: :all
+        resolve fn args, _ ->
+          {:ok, %{
+            id: args.user_id,
+            name: "bob",
+            companies: [
+              %{id: 1, user_id: args.user_id, wallet: %{id: 2, total: 10}},
+              %{id: 2, user_id: args.user_id, wallet: %{id: 1, total: 10}},
+            ]
+          }}
+        end
+      end
     end
 
     object :user do
@@ -82,6 +98,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :name, :string
 
       field :company, :company
+      field :companies, list_of(:company)
     end
 
     object :company do
@@ -181,6 +198,30 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
+  test "Works when returned object is a list" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object wallet",
+        path: ["allQueryCompaniesList"]
+      }
+    ] == errors
+
+    {:ok, result} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    assert %{data: %{"allQueryCompaniesList" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object user",
+        path: ["allQueryCompaniesList"]
+      }
+    ] == errors
+  end
+
   defp all_query(id) do
     """
     {
@@ -225,21 +266,39 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
   end
 
-    defp all_query_no_company(id) do
-      """
-      {
-        allQueryNoCompany(userId: #{id}) {
+  defp all_query_no_company(id) do
+    """
+    {
+      allQueryNoCompany(userId: #{id}) {
+        name
+        email
+        company {
+          id
           name
-          email
-          company {
-            id
-            name
-            wallet {
-              total
-            }
+          wallet {
+            total
           }
         }
       }
-      """
+    }
+    """
+  end
+
+  defp all_query_companies_list(id) do
+    """
+    {
+      allQueryCompaniesList(userId: #{id}) {
+        name
+        email
+        companies {
+          id
+          name
+          wallet {
+            total
+          }
+        }
+      }
+    }
+    """
   end
 end
