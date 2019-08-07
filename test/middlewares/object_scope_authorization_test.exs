@@ -87,15 +87,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Only user with same ID and admin has access to scoped user" do
-    {:ok, result} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -106,15 +106,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Only user that owns the company and admin can access it" do
-    {:ok, result} = Absinthe.run(all_query_with_company(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(all_query_with_company(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_with_company(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -125,7 +125,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Works for deeply nested objects" do
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -134,11 +134,11 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       }
     ] == errors
 
-    {:ok, result} = Absinthe.run(all_query_company_wallet(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -148,10 +148,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
-  defp all_query do
+  defp all_query(id) do
     """
     {
-      allQuery(userId: 1) {
+      allQuery(userId: #{id}) {
         name
         email
       }
@@ -159,10 +159,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
   end
 
-  defp all_query_with_company do
+  defp all_query_with_company(id) do
     """
     {
-      allQuery(userId: 1) {
+      allQuery(userId: #{id}) {
         name
         email
         company {
@@ -174,10 +174,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
   end
 
-  defp all_query_company_wallet do
+  defp all_query_company_wallet(id) do
     """
     {
-      allQuery(userId: 2) {
+      allQuery(userId: #{id}) {
         name
         email
         company {

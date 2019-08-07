@@ -88,17 +88,16 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp is_authorized?(false, resolution, _object, _nested_keys), do: resolution
 
   defp is_authorized?({scoped_struct, field}, resolution, _object, nested_keys) do
-    field = nested_keys ++ [field]
-    apply_authorization!(resolution, scoped_struct, field)
+    field_keys = nested_keys ++ [field]
+    apply_authorization!(resolution, scoped_struct, field_keys)
   end
 
   defp is_authorized?(scoped_struct, resolution, _object, nested_keys) do
     apply_authorization!(resolution, scoped_struct, nested_keys ++ [:id])
   end
 
-  defp apply_authorization!(resolution, scoped_struct, scoped_field) do
-    scoped_field = List.wrap(scoped_field)
-    scoped_field_value = resolution |> Map.get(:value) |> get_in(scoped_field)
+  defp apply_authorization!(resolution, scoped_struct, scoped_field_keys) do
+    scoped_field_value = resolution |> Map.get(:value) |> get_in(scoped_field_keys)
 
     Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, scoped_field_value])
   end
