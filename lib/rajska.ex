@@ -4,8 +4,9 @@ defmodule Rajska do
 
   It provides the following middlewares:
   - `Rajska.QueryAuthorization`
-  - `Rajska.ScopeAuthorization`
+  - `Rajska.QueryScopeAuthorization`
   - `Rajska.ObjectAuthorization`
+  - `Rajska.ObjectScopeAuthorization`
   - `Rajska.FieldAuthorization`
 
   ## Installation
@@ -47,16 +48,6 @@ defmodule Rajska do
 
   def middleware(middleware, field, object) do
     Rajska.add_field_authorization(middleware, field, object)
-  end
-  ```
-
-  You can also add all Rajska middlewares at once by calling `Rajska.Schema.add_middlewares/4`:
-
-  ```elixir
-  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
-
-  def middleware(middleware, field, object) do
-    Rajska.add_middlewares(middleware, field, object, Authorization)
   end
   ```
 
@@ -189,8 +180,8 @@ defmodule Rajska do
     raise "Rajska authorization module not found in Absinthe's context"
   end
 
-  defdelegate add_middlewares(middleware, field, object, authorization), to: Rajska.Schema
   defdelegate add_query_authorization(middleware, field, authorization), to: Rajska.Schema
   defdelegate add_object_authorization(middleware), to: Rajska.Schema
   defdelegate add_field_authorization(middleware, field, object), to: Rajska.Schema
+  defdelegate add_object_scope_auhtorization(middleware), to: Rajska.Schema
 end

@@ -5,8 +5,9 @@ Rajska is an elixir authorization library for [Absinthe](https://github.com/absi
 It provides the following middlewares:
 
 - [Query Authorization](#query-authorization)
-- [Scope Authorization](#scope-authorization)
+- [Query Scope Authorization](#query-scope-authorization)
 - [Object Authorization](#object-authorization)
+- [Object Scope Authorization](#object-scope-authorization)
 - [Field Authorization](#field-authorization)
 
 Documentation can be found at [https://hexdocs.pm/rajska/](https://hexdocs.pm/rajska).
@@ -46,6 +47,7 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
     middleware
     |> Rajska.add_query_authorization(field, Authorization)
     |> Rajska.add_object_authorization()
+    |> Rajska.add_object_scope_auhtorization()
   end
 
   def middleware(middleware, field, object) do
@@ -53,17 +55,7 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
   end
 ```
 
-You can also add all Rajska middlewares at once by calling [add_middlewares/4](https://hexdocs.pm/rajska/Rajska.Schema.html#add_middlewares/4):
-
-```elixir
-  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
-
-  def middleware(middleware, field, object) do
-    Rajska.add_middlewares(middleware, field, object, Authorization)
-  end
-```
-
-Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
+Since Query Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
 
 Middlewares usage can be found below.
 
@@ -105,7 +97,7 @@ Usage:
 
 Query authorization will call [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
 
-### Scope Authorization
+### Query Scope Authorization
 
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
@@ -167,6 +159,72 @@ With the permissions above, a query like the following would only be allowed by 
 ```
 
 Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+
+### Object Scope Authorization
+
+Absinthe middleware to perform object scoping.
+
+Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
+
+Usage:
+
+[Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe.Schema](#usage). Then set the scope of an object:
+
+```elixir
+object :user do
+  meta :scope, User # Same as meta :scope, {User, :id}
+
+  field :id, :integer
+  field :email, :string
+  field :name, :string
+
+  field :company, :company
+end
+
+object :company do
+  meta :scope, {Company, :user_id}
+
+  field :id, :integer
+  field :user_id, :integer
+  field :name, :string
+  field :wallet, :wallet
+end
+
+object :wallet do
+  meta :scope, Wallet
+
+  field :total, :integer
+end
+```
+
+To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
+
+```elixir
+defmodule Authorization do
+  use Rajska,
+    roles: [:user, :admin]
+
+  def has_user_access?(%{role: :admin}, User, _id), do: true
+  def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
+  def has_user_access?(_current_user, User, _id), do: false
+end
+```
+
+Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
+For example, to not raise any authorization errors and just return `nil`:
+
+```elixir
+defmodule Authorization do
+  use Rajska,
+    roles: [:user, :admin]
+
+  def has_user_access?(_user, _, nil), do: true
+
+  def has_user_access?(%{role: :admin}, User, _id), do: true
+  def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
+  def has_user_access?(_current_user, User, _id), do: false
+end
+```
 
 ### Field Authorization
 

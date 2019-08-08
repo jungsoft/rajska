@@ -1,4 +1,4 @@
-defmodule Rajska.ScopeAuthorization do
+defmodule Rajska.QueryScopeAuthorization do
   @moduledoc """
   Absinthe middleware to perform query scoping.
 
