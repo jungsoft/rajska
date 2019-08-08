@@ -27,6 +27,7 @@ defmodule Rajska.Schema do
     middleware
     |> add_query_authorization(field, authorization)
     |> add_object_authorization()
+    |> add_object_scope_auhtorization()
   end
 
   def add_middlewares(middleware, field, object, _authorization) do
