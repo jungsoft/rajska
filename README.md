@@ -55,16 +55,6 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
   end
 ```
 
-You can also add all Rajska middlewares at once by calling [add_middlewares/4](https://hexdocs.pm/rajska/Rajska.Schema.html#add_middlewares/4):
-
-```elixir
-  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
-
-  def middleware(middleware, field, object) do
-    Rajska.add_middlewares(middleware, field, object, Authorization)
-  end
-```
-
 Since Query Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
 
 Middlewares usage can be found below.

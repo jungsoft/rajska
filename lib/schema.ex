@@ -16,24 +16,6 @@ defmodule Rajska.Schema do
     QueryAuthorization
   }
 
-  @spec add_middlewares(
-    [Middleware.spec(), ...],
-    Field.t(),
-    Object.t(),
-    module()
-  ) :: [Middleware.spec(), ...]
-  def add_middlewares(middleware, field, %Object{identifier: identifier}, authorization)
-  when identifier in [:query, :mutation] do
-    middleware
-    |> add_query_authorization(field, authorization)
-    |> add_object_authorization()
-    |> add_object_scope_auhtorization()
-  end
-
-  def add_middlewares(middleware, field, object, _authorization) do
-    add_field_authorization(middleware, field, object)
-  end
-
   @spec add_query_authorization(
     [Middleware.spec(), ...],
     Field.t(),
