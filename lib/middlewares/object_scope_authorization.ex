@@ -107,7 +107,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   defp is_authorized?(nil, _, object, _nested_keys), do: raise "No meta scope defined for object #{inspect object.identifier}"
 
-  defp is_authorized?(false, resolution, _object, _nested_keys), do: resolution
+  defp is_authorized?(false, _resolution, _object, _nested_keys), do: true
 
   defp is_authorized?({scoped_struct, field}, resolution, _object, nested_keys) do
     field_keys = nested_keys ++ [field]
