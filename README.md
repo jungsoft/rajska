@@ -47,7 +47,7 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
     middleware
     |> Rajska.add_query_authorization(field, Authorization)
     |> Rajska.add_object_authorization()
-    |> add_object_scope_auhtorization()
+    |> Rajska.add_object_scope_auhtorization()
   end
 
   def middleware(middleware, field, object) do
