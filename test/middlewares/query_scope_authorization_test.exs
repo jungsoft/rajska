@@ -1,5 +1,5 @@
 defmodule Rajska.QueryScopeAuthorizationTest do
-  use Absinthe.Case, async: true
+  use ExUnit.Case, async: true
 
   defmodule User do
     defstruct [
