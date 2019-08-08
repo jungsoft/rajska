@@ -4,8 +4,9 @@ defmodule Rajska do
 
   It provides the following middlewares:
   - `Rajska.QueryAuthorization`
-  - `Rajska.ScopeAuthorization`
+  - `Rajska.QueryScopeAuthorization`
   - `Rajska.ObjectAuthorization`
+  - `Rajska.ObjectScopeAuthorization`
   - `Rajska.FieldAuthorization`
 
   ## Installation

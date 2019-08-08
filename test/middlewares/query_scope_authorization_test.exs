@@ -1,4 +1,4 @@
-defmodule Rajska.ScopeAuthorizationTest do
+defmodule Rajska.QueryScopeAuthorizationTest do
   use Absinthe.Case, async: true
 
   defmodule User do

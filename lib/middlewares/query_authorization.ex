@@ -36,7 +36,7 @@ defmodule Rajska.QueryAuthorization do
   """
   alias Absinthe.Resolution
 
-  alias Rajska.ScopeAuthorization
+  alias Rajska.QueryScopeAuthorization
 
   @behaviour Absinthe.Middleware
 
@@ -46,7 +46,7 @@ defmodule Rajska.QueryAuthorization do
     resolution
     |> Rajska.apply_auth_mod(:is_resolution_authorized?, [resolution, permission])
     |> update_result(resolution)
-    |> ScopeAuthorization.call(config)
+    |> QueryScopeAuthorization.call(config)
   end
 
   defp validate_permission!(resolution, permitted_roles) do

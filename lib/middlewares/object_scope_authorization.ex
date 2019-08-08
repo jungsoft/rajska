@@ -47,6 +47,22 @@ defmodule Rajska.ObjectScopeAuthorization do
     def has_user_access?(_current_user, User, _id), do: false
   end
   ```
+
+  Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
+  For example, to not raise any authorization errors and just return `nil`:
+
+  ```elixir
+  defmodule Authorization do
+    use Rajska,
+      roles: [:user, :admin]
+
+    def has_user_access?(_user, _, nil), do: true
+
+    def has_user_access?(%{role: :admin}, User, _id), do: true
+    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id), do: false
+  end
+  ```
   """
   @behaviour Absinthe.Middleware
 
