@@ -88,6 +88,23 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           }}
         end
       end
+
+      field :users_query, list_of(:user) do
+        middleware Rajska.QueryAuthorization, permit: :all
+        resolve fn _args, _ ->
+          {:ok, [
+            %{id: 1, name: "bob"},
+            %{id: 2, name: "bob"},
+          ]}
+        end
+      end
+
+      field :nil_user_query, :user do
+        middleware Rajska.QueryAuthorization, permit: :all
+        resolve fn _args, _ ->
+          {:ok, nil}
+        end
+      end
     end
 
     object :user do
@@ -179,7 +196,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
-  test "Works when returned object is nil" do
+  test "Works when returned nested object is nil" do
     assert {:ok, result} = Absinthe.run(all_query_no_company(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
     assert %{data: %{"allQueryNoCompany" => %{}}} = result
     refute Map.has_key?(result, :errors)
@@ -198,7 +215,17 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
-  test "Works when returned object is a list" do
+  test "Works when query returns nil" do
+    assert {:ok, result} = Absinthe.run(nil_user_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert %{data: %{"nilUserQuery" => nil}} = result
+    refute Map.has_key?(result, :errors)
+
+    {:ok, result} = Absinthe.run(nil_user_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    assert %{data: %{"nilUserQuery" => nil}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "Works when returned nested object is a list" do
     assert {:ok, %{errors: errors}} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
@@ -220,6 +247,21 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         path: ["allQueryCompaniesList"]
       }
     ] == errors
+  end
+
+  test "Works when query returns a list" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(users_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object user",
+        path: ["usersQuery"]
+      }
+    ] == errors
+
+    {:ok, result} = Absinthe.run(users_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    assert %{data: %{"usersQuery" => [_ | _]}} = result
+    refute Map.has_key?(result, :errors)
   end
 
   defp all_query(id) do
@@ -297,6 +339,28 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
             total
           }
         }
+      }
+    }
+    """
+  end
+
+  defp users_query do
+    """
+    {
+      usersQuery {
+        name
+        email
+      }
+    }
+    """
+  end
+
+  defp nil_user_query do
+    """
+    {
+      nilUserQuery {
+        name
+        email
       }
     }
     """
