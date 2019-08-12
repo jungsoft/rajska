@@ -118,18 +118,19 @@ defmodule Rajska.ObjectScopeAuthorization do
     apply_authorization!(resolution, scoped_struct, Map.get(resolution, :value), nested_keys ++ [:id])
   end
 
+  defp apply_authorization!(resolution, scoped_struct, values, keys) when is_list(values) do
+    Enum.all?(values, fn value ->
+      apply_authorization!(resolution, scoped_struct, value, keys)
+    end)
+  end
+
+  defp apply_authorization!(resolution, scoped_struct, nil, _keys) do
+    Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, nil])
+  end
+
   defp apply_authorization!(resolution, scoped_struct, value, [first_key | remaining_keys]) when length(remaining_keys) > 0 do
-    case Map.get(value, first_key) do
-      nested_value when is_map(nested_value) ->
-        apply_authorization!(resolution, scoped_struct, nested_value, remaining_keys)
-
-      values when is_list(values) ->
-        Enum.all?(values, fn value ->
-          apply_authorization!(resolution, scoped_struct, value, remaining_keys)
-        end)
-
-      nil -> Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, nil])
-    end
+    nested_value = Map.get(value, first_key)
+    apply_authorization!(resolution, scoped_struct, nested_value, remaining_keys)
   end
 
   defp apply_authorization!(resolution, scoped_struct, value, [first_key]) do
