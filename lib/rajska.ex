@@ -183,5 +183,5 @@ defmodule Rajska do
   defdelegate add_query_authorization(middleware, field, authorization), to: Rajska.Schema
   defdelegate add_object_authorization(middleware), to: Rajska.Schema
   defdelegate add_field_authorization(middleware, field, object), to: Rajska.Schema
-  defdelegate add_object_scope_auhtorization(middleware), to: Rajska.Schema
+  defdelegate add_object_scope_authorization(middleware), to: Rajska.Schema
 end

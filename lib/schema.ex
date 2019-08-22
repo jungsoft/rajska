@@ -51,8 +51,8 @@ defmodule Rajska.Schema do
     [{{FieldAuthorization, :call}, object: object, field: field} | middleware]
   end
 
-  @spec add_object_scope_auhtorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
-  def add_object_scope_auhtorization(middleware) do
+  @spec add_object_scope_authorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
+  def add_object_scope_authorization(middleware) do
     middleware ++ [ObjectScopeAuthorization]
   end
 

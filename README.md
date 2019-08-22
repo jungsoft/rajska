@@ -49,7 +49,7 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
     middleware
     |> Rajska.add_query_authorization(field, Authorization)
     |> Rajska.add_object_authorization()
-    |> Rajska.add_object_scope_auhtorization()
+    |> Rajska.add_object_scope_authorization()
   end
 
   def middleware(middleware, field, object) do
@@ -199,7 +199,7 @@ object :wallet do
 end
 ```
 
-To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
+To define custom rules for the scoping, use [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). For example:
 
 ```elixir
 defmodule Authorization do

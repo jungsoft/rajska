@@ -37,7 +37,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
     def middleware(middleware, _field, %Absinthe.Type.Object{identifier: identifier})
     when identifier in [:query, :mutation, :subscription] do
-      Rajska.add_object_scope_auhtorization(middleware)
+      Rajska.add_object_scope_authorization(middleware)
     end
 
     def middleware(middleware, _field, _object), do: middleware
