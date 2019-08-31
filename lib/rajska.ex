@@ -73,7 +73,7 @@ defmodule Rajska do
         Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
       end
 
-      def get_current_user(%Resolution{context: %{current_user: current_user}}), do: current_user
+      def get_current_user(%{current_user: current_user}), do: current_user
 
       def get_user_role(%{role: role}), do: role
       def get_user_role(nil), do: nil
@@ -110,28 +110,28 @@ defmodule Rajska do
 
       def unauthorized_msg(_resolution), do: "unauthorized"
 
-      def is_super_user?(%Resolution{} = resolution) do
-        resolution
+      def is_super_user?(context) do
+        context
         |> get_current_user()
         |> get_user_role()
         |> is_super_role?()
       end
 
-      def is_resolution_authorized?(%Resolution{} = resolution, allowed_role) do
-        resolution
+      def is_resolution_authorized?(context, allowed_role) do
+        context
         |> get_current_user()
         |> get_user_role()
         |> is_role_authorized?(allowed_role)
       end
 
-      def is_resolution_field_authorized?(%Resolution{} = resolution, scope_by, source) do
-        resolution
+      def is_resolution_field_authorized?(context, scope_by, source) do
+        context
         |> get_current_user()
         |> is_field_authorized?(scope_by, source)
       end
 
-      def has_resolution_access?(%Resolution{} = resolution, scoped_struct, field_value) do
-        resolution
+      def has_resolution_access?(context, scoped_struct, field_value) do
+        context
         |> get_current_user()
         |> has_user_access?(scoped_struct, field_value)
       end
@@ -170,13 +170,13 @@ defmodule Rajska do
   end
 
   @doc false
-  def apply_auth_mod(resolution, fnc_name, args \\ [])
+  def apply_auth_mod(context, fnc_name, args \\ [])
 
-  def apply_auth_mod(%Resolution{context: %{authorization: authorization}}, fnc_name, args) do
+  def apply_auth_mod(%{authorization: authorization}, fnc_name, args) do
     apply(authorization, fnc_name, args)
   end
 
-  def apply_auth_mod(_resolution, _fnc_name, _args) do
+  def apply_auth_mod(context, _fnc_name, _args) do
     raise "Rajska authorization module not found in Absinthe's context"
   end
 

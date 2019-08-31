@@ -35,18 +35,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
     def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
-    def middleware(middleware, _field, %Absinthe.Type.Object{identifier: identifier})
-    when identifier in [:query, :mutation, :subscription] do
-      Rajska.add_object_scope_authorization(middleware)
-    end
-
     def middleware(middleware, _field, _object), do: middleware
 
     query do
       field :all_query, :user do
         arg :user_id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn args, _ ->
           {:ok, %{
             id: args.user_id,
@@ -64,7 +58,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :all_query_no_company, :user do
         arg :user_id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn args, _ ->
           {:ok, %{
             id: args.user_id,
@@ -76,7 +69,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :all_query_companies_list, :user do
         arg :user_id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn args, _ ->
           {:ok, %{
             id: args.user_id,
@@ -90,7 +82,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       end
 
       field :users_query, list_of(:user) do
-        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn _args, _ ->
           {:ok, [
             %{id: 1, name: "bob"},
@@ -100,7 +91,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       end
 
       field :nil_user_query, :user do
-        middleware Rajska.QueryAuthorization, permit: :all
         resolve fn _args, _ ->
           {:ok, nil}
         end
@@ -135,131 +125,123 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Only user with same ID and admin has access to scoped user" do
-    {:ok, result} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = run_pipeline(all_query(1), context: %{current_user: %{role: :user, id: 1}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query(1), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query(1), context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["allQuery"]
       }
     ] == errors
   end
 
   test "Only user that owns the company and admin can access it" do
-    {:ok, result} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :user, id: 1}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_with_company(1), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["allQuery"]
       }
     ] == errors
   end
 
   test "Works for deeply nested objects" do
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 0, line: 8}],
         message: "Not authorized to access object wallet",
-        path: ["allQuery"]
       }
     ] == errors
 
-    {:ok, result} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_company_wallet(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :user, id: 1}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["allQuery"]
       }
     ] == errors
   end
 
   test "Works when returned nested object is nil" do
-    assert {:ok, result} = Absinthe.run(all_query_no_company(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, result} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :user, id: 2}})
     assert %{data: %{"allQueryNoCompany" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(all_query_no_company(2), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQueryNoCompany" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_no_company(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :user, id: 1}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["allQueryNoCompany"]
       }
     ] == errors
   end
 
   test "Works when query returns nil" do
-    assert {:ok, result} = Absinthe.run(nil_user_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, result} = run_pipeline(nil_user_query(), context: %{current_user: %{role: :user, id: 1}})
     assert %{data: %{"nilUserQuery" => nil}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = Absinthe.run(nil_user_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(nil_user_query(), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"nilUserQuery" => nil}} = result
     refute Map.has_key?(result, :errors)
   end
 
   test "Works when returned nested object is a list" do
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 0, line: 8}],
         message: "Not authorized to access object wallet",
-        path: ["allQueryCompaniesList"]
       }
     ] == errors
 
-    {:ok, result} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"allQueryCompaniesList" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = Absinthe.run(all_query_companies_list(2), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :user, id: 1}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["allQueryCompaniesList"]
       }
     ] == errors
   end
 
   test "Works when query returns a list" do
-    assert {:ok, %{errors: errors}} = Absinthe.run(users_query(), __MODULE__.Schema, context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(users_query(), context: %{current_user: %{role: :user, id: 2}})
     assert [
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
-        path: ["usersQuery"]
       }
     ] == errors
 
-    {:ok, result} = Absinthe.run(users_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(users_query(), context: %{current_user: %{role: :admin, id: 2}})
     assert %{data: %{"usersQuery" => [_ | _]}} = result
     refute Map.has_key?(result, :errors)
   end
@@ -364,5 +346,21 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       }
     }
     """
+  end
+
+  defp run_pipeline(document, opts) do
+    case Absinthe.Pipeline.run(document, pipeline(opts)) do
+      {:ok, %{result: result}, _phases} ->
+        {:ok, result}
+
+      {:error, msg, _phases} ->
+        {:error, msg}
+    end
+  end
+
+  defp pipeline(options) do
+    __MODULE__.Schema
+    |> Absinthe.Pipeline.for_document(options)
+    |> Absinthe.Pipeline.insert_after(Absinthe.Phase.Document.Execution.Resolution, Rajska.ObjectScopeAuthorization)
   end
 end

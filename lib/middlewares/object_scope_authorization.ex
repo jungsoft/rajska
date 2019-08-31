@@ -64,97 +64,84 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
   ```
   """
-  @behaviour Absinthe.Middleware
 
-  alias Absinthe.{
-    Resolution,
-    Schema,
-    Type
-  }
+  alias Absinthe.{Blueprint, Phase, Type}
+  use Absinthe.Phase
 
-  def call(%Resolution{definition: definition} = resolution, _config) do
-    authorize(definition.schema_node.type, definition.selections, resolution)
+  @spec run(Blueprint.t() | Phase.Error.t(), Keyword.t()) :: {:ok, map}
+  def run(%Blueprint{execution: execution} = bp, _options \\ []) do
+    {:ok, %{bp | execution: process(execution)}}
   end
 
-  defp authorize(type, fields, resolution, nested_keys \\ []) do
-    type
-    |> lookup_object(resolution.schema)
-    |> authorize_object(fields, resolution, nested_keys)
+  defp process(%{validation_errors: [], result: result} = execution), do: %{execution | result: result(result, execution.context)}
+  defp process(execution), do: execution
+
+  # Root
+  defp result(%{fields: fields, emitter: %{schema_node: %{identifier: identifier}}} = result, context)
+  when identifier in [:query, :mutation, :subscription] do
+    %{result | fields: field_result(fields, context)}
   end
+
+  # Object
+  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
+    type = get_object_type(schema_node.type)
+    scope = Type.meta(type, :scope)
+
+    case is_authorized?(scope, result.root_value, context, type) do
+      true -> %{result | fields: field_result(fields, context)}
+      false -> Map.put(result, :errors, [error(emitter)])
+    end
+  end
+
+  # List
+  defp result(%{values: values} = result, context) do
+    %{result | values: list_result(values, context)}
+  end
+
+  # Leafs
+  defp result(result, _context), do: result
 
   # When is a list, inspect object that composes the list.
-  defp lookup_object(%Type.List{of_type: object_type}, schema) do
-    lookup_object(object_type, schema)
+  defp get_object_type(%Type.List{of_type: object_type}), do: object_type
+  defp get_object_type(object_type), do: object_type
+
+  defp field_result(fields, context, new_fields \\ [])
+
+  defp field_result([], _context, new_fields), do: new_fields
+
+  defp field_result([field | fields], context, new_fields) do
+    new_fields = [result(field, context) | new_fields]
+    field_result(fields, context, new_fields)
   end
 
-  defp lookup_object(object_type, schema) do
-    Schema.lookup_type(schema, object_type)
+  defp list_result(values, context, new_values \\ [])
+
+  defp list_result([], _context, new_values), do: new_values
+
+  defp list_result([value | values], context, new_values) do
+    new_values = [result(value, context) | new_values]
+    list_result(values, context, new_values)
   end
 
-  # When is a Scalar, Custom or Enum type, authorize.
-  defp authorize_object(%type{} = object, fields, resolution, nested_keys)
-  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value] do
-    put_result(true, fields, resolution, object, nested_keys)
+  defp is_authorized?(nil, _values, _context, object), do: raise "No meta scope defined for object #{inspect object.identifier}"
+
+  defp is_authorized?(false, _values, _context, _object), do: true
+
+  defp is_authorized?({scoped_struct, field}, values, context, _object) do
+    scoped_field_value = Map.get(values, field)
+    Rajska.apply_auth_mod(context, :has_resolution_access?, [context, scoped_struct, scoped_field_value])
   end
 
-  # When is an user defined object, lookup the scope meta tag.
-  defp authorize_object(object, fields, resolution, nested_keys) do
-    object
-    |> Type.meta(:scope)
-    |> is_authorized?(resolution, object, nested_keys)
-    |> put_result(fields, resolution, object, nested_keys)
+  defp is_authorized?(scoped_struct, values, context, _object) do
+    scoped_field_value = Map.get(values, :id)
+    Rajska.apply_auth_mod(context, :has_resolution_access?, [context, scoped_struct, scoped_field_value])
   end
 
-  defp is_authorized?(nil, _, object, _nested_keys), do: raise "No meta scope defined for object #{inspect object.identifier}"
-
-  defp is_authorized?(false, _resolution, _object, _nested_keys), do: true
-
-  defp is_authorized?({scoped_struct, field}, resolution, _object, nested_keys) do
-    field_keys = nested_keys ++ [field]
-    apply_authorization!(resolution, scoped_struct, Map.get(resolution, :value), field_keys)
+  defp error(%{source_location: location, schema_node: %{type: type}}) do
+    %Phase.Error{
+      phase: __MODULE__,
+      message: "Not authorized to access object #{get_object_type(type).identifier}",
+      locations: [location]
+    }
   end
-
-  defp is_authorized?(scoped_struct, resolution, _object, nested_keys) do
-    apply_authorization!(resolution, scoped_struct, Map.get(resolution, :value), nested_keys ++ [:id])
-  end
-
-  defp apply_authorization!(resolution, scoped_struct, values, keys) when is_list(values) do
-    Enum.all?(values, fn value ->
-      apply_authorization!(resolution, scoped_struct, value, keys)
-    end)
-  end
-
-  defp apply_authorization!(resolution, scoped_struct, nil, _keys) do
-    Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, nil])
-  end
-
-  defp apply_authorization!(resolution, scoped_struct, value, [first_key | remaining_keys]) when length(remaining_keys) > 0 do
-    nested_value = Map.get(value, first_key)
-    apply_authorization!(resolution, scoped_struct, nested_value, remaining_keys)
-  end
-
-  defp apply_authorization!(resolution, scoped_struct, value, [first_key]) do
-    scoped_field_value = Map.get(value, first_key)
-    Rajska.apply_auth_mod(resolution, :has_resolution_access?, [resolution, scoped_struct, scoped_field_value])
-  end
-
-  defp put_result(true, fields, resolution, _type, nested_keys), do: find_associations(fields, resolution, nested_keys)
-
-  defp put_result(false, _fields, resolution, object, _nested_keys) do
-    Resolution.put_result(resolution, {:error, "Not authorized to access object #{object.identifier}"})
-  end
-
-  defp find_associations([%{selections: []} | tail], resolution, nested_keys) do
-    find_associations(tail, resolution, nested_keys)
-  end
-
-  defp find_associations(
-    [%{schema_node: schema_node, selections: selections} | tail],
-    resolution,
-    nested_keys
-  ) do
-    authorize(schema_node.type, selections ++ tail, resolution, nested_keys ++ [schema_node.identifier])
-  end
-
-  defp find_associations([], resolution, _nested_keys), do: resolution
 end
