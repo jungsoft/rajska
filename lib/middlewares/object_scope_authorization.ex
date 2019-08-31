@@ -129,12 +129,12 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   defp is_authorized?({scoped_struct, field}, values, context, _object) do
     scoped_field_value = Map.get(values, field)
-    Rajska.apply_auth_mod(context, :has_resolution_access?, [context, scoped_struct, scoped_field_value])
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value])
   end
 
   defp is_authorized?(scoped_struct, values, context, _object) do
     scoped_field_value = Map.get(values, :id)
-    Rajska.apply_auth_mod(context, :has_resolution_access?, [context, scoped_struct, scoped_field_value])
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value])
   end
 
   defp error(%{source_location: location, schema_node: %{type: type}}) do

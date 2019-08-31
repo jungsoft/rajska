@@ -54,8 +54,6 @@ defmodule Rajska do
   Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
   """
 
-  alias Absinthe.Resolution
-
   alias Rajska.Authorization
 
   defmacro __using__(opts \\ []) do
@@ -117,20 +115,20 @@ defmodule Rajska do
         |> is_super_role?()
       end
 
-      def is_resolution_authorized?(context, allowed_role) do
+      def is_context_authorized?(context, allowed_role) do
         context
         |> get_current_user()
         |> get_user_role()
         |> is_role_authorized?(allowed_role)
       end
 
-      def is_resolution_field_authorized?(context, scope_by, source) do
+      def is_context_field_authorized?(context, scope_by, source) do
         context
         |> get_current_user()
         |> is_field_authorized?(scope_by, source)
       end
 
-      def has_resolution_access?(context, scoped_struct, field_value) do
+      def has_context_access?(context, scoped_struct, field_value) do
         context
         |> get_current_user()
         |> has_user_access?(scoped_struct, field_value)
@@ -176,7 +174,7 @@ defmodule Rajska do
     apply(authorization, fnc_name, args)
   end
 
-  def apply_auth_mod(context, _fnc_name, _args) do
+  def apply_auth_mod(_context, _fnc_name, _args) do
     raise "Rajska authorization module not found in Absinthe's context"
   end
 
