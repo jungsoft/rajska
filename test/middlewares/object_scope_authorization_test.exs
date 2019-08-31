@@ -125,15 +125,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Only user with same ID and admin has access to scoped user" do
-    {:ok, result} = run_pipeline(all_query(1), context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = run_pipeline(all_query(1), context(:user, 1))
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = run_pipeline(all_query(1), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query(1), context(:admin, 2))
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query(1), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query(1), context(:user, 2))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -143,15 +143,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Only user that owns the company and admin can access it" do
-    {:ok, result} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :user, id: 1}})
+    {:ok, result} = run_pipeline(all_query_with_company(1), context(:user, 1))
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_with_company(1), context(:admin, 2))
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_with_company(1), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_with_company(1), context(:user, 2))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -161,7 +161,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Works for deeply nested objects" do
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context(:user, 2))
     assert [
       %{
         locations: [%{column: 0, line: 8}],
@@ -169,11 +169,11 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       }
     ] == errors
 
-    {:ok, result} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_company_wallet(2), context(:admin, 2))
     assert %{data: %{"allQuery" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context(:user, 1))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -183,15 +183,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Works when returned nested object is nil" do
-    assert {:ok, result} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, result} = run_pipeline(all_query_no_company(2), context(:user, 2))
     assert %{data: %{"allQueryNoCompany" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_no_company(2), context(:admin, 2))
     assert %{data: %{"allQueryNoCompany" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_no_company(2), context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_no_company(2), context(:user, 1))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -201,17 +201,17 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Works when query returns nil" do
-    assert {:ok, result} = run_pipeline(nil_user_query(), context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, result} = run_pipeline(nil_user_query(), context(:user, 1))
     assert %{data: %{"nilUserQuery" => nil}} = result
     refute Map.has_key?(result, :errors)
 
-    {:ok, result} = run_pipeline(nil_user_query(), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(nil_user_query(), context(:admin, 2))
     assert %{data: %{"nilUserQuery" => nil}} = result
     refute Map.has_key?(result, :errors)
   end
 
   test "Works when returned nested object is a list" do
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context(:user, 2))
     assert [
       %{
         locations: [%{column: 0, line: 8}],
@@ -219,11 +219,11 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       }
     ] == errors
 
-    {:ok, result} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(all_query_companies_list(2), context(:admin, 2))
     assert %{data: %{"allQueryCompaniesList" => %{}}} = result
     refute Map.has_key?(result, :errors)
 
-    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context: %{current_user: %{role: :user, id: 1}})
+    assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context(:user, 1))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -233,7 +233,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Works when query returns a list" do
-    assert {:ok, %{errors: errors}} = run_pipeline(users_query(), context: %{current_user: %{role: :user, id: 2}})
+    assert {:ok, %{errors: errors}} = run_pipeline(users_query(), context(:user, 2))
     assert [
       %{
         locations: [%{column: 0, line: 2}],
@@ -241,7 +241,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       }
     ] == errors
 
-    {:ok, result} = run_pipeline(users_query(), context: %{current_user: %{role: :admin, id: 2}})
+    {:ok, result} = run_pipeline(users_query(), context(:admin, 2))
     assert %{data: %{"usersQuery" => [_ | _]}} = result
     refute Map.has_key?(result, :errors)
   end
@@ -347,6 +347,8 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     }
     """
   end
+
+  defp context(role, id), do: [context: %{current_user: %{role: role, id: id}}]
 
   defp run_pipeline(document, opts) do
     case Absinthe.Pipeline.run(document, pipeline(opts)) do
