@@ -79,7 +79,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   # Root
   defp result(%{fields: fields, emitter: %{schema_node: %{identifier: identifier}}} = result, context)
   when identifier in [:query, :mutation, :subscription] do
-    %{result | fields: field_result(fields, context)}
+    %{result | fields: walk_result(fields, context)}
   end
 
   # Object
@@ -88,14 +88,14 @@ defmodule Rajska.ObjectScopeAuthorization do
     scope = Type.meta(type, :scope)
 
     case is_authorized?(scope, result.root_value, context, type) do
-      true -> %{result | fields: field_result(fields, context)}
+      true -> %{result | fields: walk_result(fields, context)}
       false -> Map.put(result, :errors, [error(emitter)])
     end
   end
 
   # List
   defp result(%{values: values} = result, context) do
-    %{result | values: list_result(values, context)}
+    %{result | values: walk_result(values, context)}
   end
 
   # Leafs
@@ -105,22 +105,13 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp get_object_type(%Type.List{of_type: object_type}), do: object_type
   defp get_object_type(object_type), do: object_type
 
-  defp field_result(fields, context, new_fields \\ [])
+  defp walk_result(fields, context, new_fields \\ [])
 
-  defp field_result([], _context, new_fields), do: new_fields
+  defp walk_result([], _context, new_fields), do: new_fields
 
-  defp field_result([field | fields], context, new_fields) do
+  defp walk_result([field | fields], context, new_fields) do
     new_fields = [result(field, context) | new_fields]
-    field_result(fields, context, new_fields)
-  end
-
-  defp list_result(values, context, new_values \\ [])
-
-  defp list_result([], _context, new_values), do: new_values
-
-  defp list_result([value | values], context, new_values) do
-    new_values = [result(value, context) | new_values]
-    list_result(values, context, new_values)
+    walk_result(fields, context, new_fields)
   end
 
   defp is_authorized?(nil, _values, _context, object), do: raise "No meta scope defined for object #{inspect object.identifier}"
