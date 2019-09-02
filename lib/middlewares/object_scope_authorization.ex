@@ -1,12 +1,12 @@
 defmodule Rajska.ObjectScopeAuthorization do
   @moduledoc """
-  Absinthe middleware to perform object scoping.
+  Absinthe Phase to perform object scoping.
 
   Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
 
   ## Usage
 
-  [Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the scope of an object:
+  [Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe Pipeline](https://hexdocs.pm/rajska/Rajska.html#module-usage). Then set the scope of an object:
 
   ```elixir
   object :user do

@@ -49,12 +49,32 @@ Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) mo
     middleware
     |> Rajska.add_query_authorization(field, Authorization)
     |> Rajska.add_object_authorization()
-    |> Rajska.add_object_scope_authorization()
   end
 
   def middleware(middleware, field, object) do
     Rajska.add_field_authorization(middleware, field, object)
   end
+```
+
+The only exception is [Object Scope Authorization](#object-scope-authorization), which isn't a middleware, but an [Absinthe Phase](https://hexdocs.pm/absinthe/Absinthe.Phase.html). To use it, add it to your pipeline after the resolution:
+
+```elixir
+# router.ex
+alias Absinthe.Phase.Document.Execution.Resolution
+alias Absinthe.Pipeline
+alias Rajska.ObjectScopeAuthorization
+
+forward "/graphql", Absinthe.Plug,
+  schema: MyProjectWeb.Schema,
+  socket: MyProjectWeb.UserSocket,
+  pipeline: {__MODULE__, :pipeline} # Add this line
+
+def pipeline(config, pipeline_opts) do
+  config
+  |> Map.fetch!(:schema_mod)
+  |> Pipeline.for_document(pipeline_opts)
+  |> Pipeline.insert_after(Resolution, ObjectScopeAuthorization)
+end
 ```
 
 Since Query Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
@@ -164,13 +184,13 @@ Object Authorization middleware runs after Query Authorization middleware (if ad
 
 ### Object Scope Authorization
 
-Absinthe middleware to perform object scoping.
+Absinthe Phase to perform object scoping.
 
 Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
 
 Usage:
 
-[Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe.Schema](#usage). Then set the scope of an object:
+[Create your Authorization module and add it and ObjectScopeAuthorization to your Absinthe pipeline](#usage). Then set the scope of an object:
 
 ```elixir
 object :user do
