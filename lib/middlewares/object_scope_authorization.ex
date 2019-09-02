@@ -76,6 +76,12 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp process(%{validation_errors: [], result: result} = execution), do: %{execution | result: result(result, execution.context)}
   defp process(execution), do: execution
 
+  # Introspection
+  defp result(%{emitter: %{schema_node: %{identifier: identifier}}} = result, _context)
+  when identifier in [:query_type, nil] do
+    result
+  end
+
   # Root
   defp result(%{fields: fields, emitter: %{schema_node: %{identifier: identifier}}} = result, context)
   when identifier in [:query, :mutation, :subscription] do
@@ -103,11 +109,12 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   # When is a list, inspect object that composes the list.
   defp get_object_type(%Type.List{of_type: object_type}), do: object_type
+  defp get_object_type(%Type.NonNull{of_type: object_type}), do: object_type
   defp get_object_type(object_type), do: object_type
 
   defp walk_result(fields, context, new_fields \\ [])
 
-  defp walk_result([], _context, new_fields), do: new_fields
+  defp walk_result([], _context, new_fields), do: Enum.reverse(new_fields)
 
   defp walk_result([field | fields], context, new_fields) do
     new_fields = [result(field, context) | new_fields]
