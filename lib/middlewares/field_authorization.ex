@@ -35,6 +35,7 @@ defmodule Rajska.FieldAuthorization do
     scope_by = get_scope_by_field!(object, is_field_private?)
 
     resolution
+    |> Map.get(:context)
     |> authorized?(is_field_private?, scope_by, resolution.source)
     |> put_result(resolution, field)
   end
@@ -52,12 +53,12 @@ defmodule Rajska.FieldAuthorization do
     end
   end
 
-  defp authorized?(_resolution, false, _scope_by, _source), do: true
+  defp authorized?(_context, false, _scope_by, _source), do: true
 
-  defp authorized?(resolution, true, scope_by, source) do
-    case Rajska.apply_auth_mod(resolution, :is_super_user?, [resolution]) do
+  defp authorized?(context, true, scope_by, source) do
+    case Rajska.apply_auth_mod(context, :is_super_user?, [context]) do
       true -> true
-      false -> Rajska.apply_auth_mod(resolution, :is_resolution_field_authorized?, [resolution, scope_by, source])
+      false -> Rajska.apply_auth_mod(context, :is_context_field_authorized?, [context, scope_by, source])
     end
   end
 

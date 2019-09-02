@@ -9,7 +9,7 @@ defmodule Rajska.Authorization do
   @type role :: atom()
   @type current_user_role :: role
 
-  @callback get_current_user(resolution :: Resolution.t()) :: current_user
+  @callback get_current_user(context :: map()) :: current_user
 
   @callback get_user_role(current_user) :: role
 

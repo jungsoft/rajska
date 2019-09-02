@@ -40,17 +40,17 @@ defmodule Rajska.QueryAuthorization do
 
   @behaviour Absinthe.Middleware
 
-  def call(resolution, [{:permit, permission} | _scoped] = config) do
-    validate_permission!(resolution, permission)
+  def call(%{context: context} = resolution, [{:permit, permission} | _scoped] = config) do
+    validate_permission!(context, permission)
 
-    resolution
-    |> Rajska.apply_auth_mod(:is_resolution_authorized?, [resolution, permission])
+    context
+    |> Rajska.apply_auth_mod(:is_context_authorized?, [context, permission])
     |> update_result(resolution)
     |> QueryScopeAuthorization.call(config)
   end
 
-  defp validate_permission!(resolution, permitted_roles) do
-    valid_roles = Rajska.apply_auth_mod(resolution, :valid_roles)
+  defp validate_permission!(context, permitted_roles) do
+    valid_roles = Rajska.apply_auth_mod(context, :valid_roles)
 
     unless permission_valid?(valid_roles, permitted_roles) do
       raise """
@@ -70,7 +70,7 @@ defmodule Rajska.QueryAuthorization do
 
   defp update_result(true, resolution), do: resolution
 
-  defp update_result(false, resolution) do
-    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(resolution, :unauthorized_msg, [resolution])})
+  defp update_result(false, %{context: context} = resolution) do
+    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(context, :unauthorized_msg, [resolution])})
   end
 end

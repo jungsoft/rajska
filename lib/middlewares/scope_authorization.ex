@@ -51,7 +51,7 @@ defmodule Rajska.QueryScopeAuthorization do
   def call(resolution, [_ | [scoped: false]]), do: resolution
 
   def call(resolution, [{:permit, permission} | scoped_config]) do
-    not_scoped_roles = Rajska.apply_auth_mod(resolution, :not_scoped_roles)
+    not_scoped_roles = Rajska.apply_auth_mod(resolution.context, :not_scoped_roles)
 
     case Enum.member?(not_scoped_roles, permission) do
       true -> resolution
@@ -105,9 +105,9 @@ defmodule Rajska.QueryScopeAuthorization do
     raise "Error in query #{name}: no argument found in middleware Scope Authorization"
   end
 
-  def apply_scope_authorization(resolution, field_value, scoped_struct) do
-    resolution
-    |> Rajska.apply_auth_mod(:has_resolution_access?, [resolution, scoped_struct, field_value])
+  def apply_scope_authorization(%{context: context} = resolution, field_value, scoped_struct) do
+    context
+    |> Rajska.apply_auth_mod(:has_context_access?, [context, scoped_struct, field_value])
     |> update_result(resolution)
   end
 
