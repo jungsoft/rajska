@@ -57,6 +57,7 @@ defmodule Rajska.ObjectAuthorization do
     Schema,
     Type
   }
+  alias Rajska.Introspection
   alias Type.{Custom, Scalar}
 
   def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
@@ -67,13 +68,9 @@ defmodule Rajska.ObjectAuthorization do
 
   defp authorize(type, fields, resolution) do
     type
+    |> Introspection.get_object_type()
     |> lookup_object(resolution.schema)
     |> authorize_object(fields, resolution)
-  end
-
-  # When is a list, inspect object that composes the list.
-  defp lookup_object(%Type.List{of_type: object_type}, schema) do
-    lookup_object(object_type, schema)
   end
 
   defp lookup_object(object_type, schema) do
