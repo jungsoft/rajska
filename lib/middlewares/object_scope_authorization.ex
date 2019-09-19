@@ -68,6 +68,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   """
 
   alias Absinthe.{Blueprint, Phase, Type}
+  alias Rajska.Introspection
   use Absinthe.Phase
 
   @spec run(Blueprint.t() | Phase.Error.t(), Keyword.t()) :: {:ok, map}
@@ -92,7 +93,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   # Object
   defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
-    type = get_object_type(schema_node.type)
+    type = Introspection.get_object_type(schema_node.type)
     scope = Type.meta(type, :scope)
 
     case is_authorized?(scope, result.root_value, context, type) do
@@ -108,11 +109,6 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   # Leafs
   defp result(result, _context), do: result
-
-  # When is a list, inspect object that composes the list.
-  defp get_object_type(%Type.List{of_type: object_type}), do: object_type
-  defp get_object_type(%Type.NonNull{of_type: object_type}), do: object_type
-  defp get_object_type(object_type), do: object_type
 
   defp walk_result(fields, context, new_fields \\ [])
 
@@ -140,7 +136,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp error(%{source_location: location, schema_node: %{type: type}}) do
     %Phase.Error{
       phase: __MODULE__,
-      message: "Not authorized to access object #{get_object_type(type).identifier}",
+      message: "Not authorized to access object #{Introspection.get_object_type(type).identifier}",
       locations: [location]
     }
   end
