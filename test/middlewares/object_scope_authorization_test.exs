@@ -15,8 +15,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     use Rajska,
       roles: [:user, :admin]
 
-    def has_user_access?(_user, _, nil), do: true
-
     def has_user_access?(%{role: :admin}, User, _id, nil), do: true
     def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
     def has_user_access?(_current_user, User, _id, nil), do: false

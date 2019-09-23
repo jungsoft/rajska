@@ -11,6 +11,15 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     def __schema__(:source), do: "users"
   end
 
+  defmodule BankAccount do
+    defstruct [
+      id: 1,
+      total: 5,
+    ]
+
+    def __schema__(:source), do: "bank_account"
+  end
+
   defmodule Authorization do
     use Rajska,
       roles: [:user, :admin]
@@ -18,6 +27,9 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     def has_user_access?(%{role: :admin}, User, _id, nil), do: true
     def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
     def has_user_access?(_current_user, User, _id, nil), do: false
+
+    def has_user_access?(_current_user, BankAccount, _id, nil), do: false
+    def has_user_access?(_current_user, BankAccount, _id, :read_only), do: true
   end
 
   defmodule Schema do
@@ -37,7 +49,11 @@ defmodule Rajska.QueryScopeAuthorizationTest do
         arg :id, non_null(:integer)
 
         middleware Rajska.QueryAuthorization, [permit: :user, scoped: User]
-        resolve fn _, _ -> {:ok, %{name: "bob"}} end
+        resolve fn _, _ ->
+          {:ok, %{
+            name: "bob",
+            bank_account: %{id: 1, total: 10}
+          }} end
       end
 
       field :custom_arg_scoped_query, :user do
@@ -67,16 +83,54 @@ defmodule Rajska.QueryScopeAuthorizationTest do
         middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
+
+      field :scoped_bank_account_update_mutation, :bank_account do
+        arg :id, :integer
+        arg :params, :bank_account_params
+
+        middleware Rajska.QueryAuthorization, [permit: :user, scoped: BankAccount]
+        resolve fn _, _ -> {:ok, %{total: 100}} end
+      end
     end
 
     object :user do
       field :email, :string
       field :name, :string
+      field :bank_account, :bank_account
+    end
+
+    object :bank_account do
+      meta :scope, {BankAccount, :user_id}
+      meta :rule, :read_only
+
+      field :total, :integer
     end
 
     input_object :user_params do
       field :id, :integer
     end
+
+    input_object :bank_account_params do
+      field :total, :integer
+    end
+  end
+
+  test "User can see bank_account but not edit it" do
+    user = %{role: :user, id: 1}
+
+    {:ok, success_result} = Absinthe.run(user_scoped_query(1), __MODULE__.Schema, context: %{current_user: user})
+
+    refute Map.has_key?(success_result, :errors)
+
+    assert {:ok,
+      %{
+        errors: [
+          %{
+            message: "Not authorized to access this bank account",
+          }
+        ]
+      }
+    } = Absinthe.run(scoped_bank_account_update_mutation(1), __MODULE__.Schema, context: %{current_user: user})
   end
 
   test "User scoped query works for own user" do
@@ -221,7 +275,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
 
   defp user_scoped_query(user_id) do
     """
-    { userScopedQuery(id: #{user_id}) { name email } }
+    { userScopedQuery(id: #{user_id}) { name email bank_account { total } } }
     """
   end
 
@@ -248,6 +302,13 @@ defmodule Rajska.QueryScopeAuthorizationTest do
   def not_scoped_query(user_id) do
     """
     { notScopedQuery(id: #{user_id}) { name email } }
+    """
+  end
+
+  def scoped_bank_account_update_mutation(bank_account_id) do
+    bank_account_id = if bank_account_id == nil, do: "null", else: bank_account_id
+    """
+    { scopedBankAccountUpdateMutation(id: #{bank_account_id}, params: {total: 100}) { total } }
     """
   end
 end
