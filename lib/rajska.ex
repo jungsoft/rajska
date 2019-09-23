@@ -28,11 +28,14 @@ defmodule Rajska do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      roles: [:user, :admin],
+      default_rule: :default
   end
   ```
 
   Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `c:Rajska.Authorization.is_super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
+
+  Note: if the `:default_rule` is not given, `:default` is used as it's value.
 
   Add your Authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
@@ -63,12 +66,18 @@ defmodule Rajska do
     roles_names = get_role_names(roles)
     super_roles = get_super_roles(roles_with_tier)
 
+    default_rule =  Keyword.get(opts, :default_rule, :default)
+
     quote do
       @behaviour Authorization
 
       @spec config() :: Keyword.t()
       def config do
-        Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
+        Keyword.merge(unquote(opts), [
+          all_role: unquote(all_role),
+          roles: unquote(roles_with_tier),
+          default_rule: unquote(default_rule)
+        ])
       end
 
       def get_current_user(%{current_user: current_user}), do: current_user
@@ -99,14 +108,12 @@ defmodule Rajska do
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, nil) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, :default) do
         is_super_user? = current_user |> get_user_role() |> is_super_role?()
         is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
 
         is_super_user? || is_owner?
       end
-
-      def has_user_access?(_, _, _, rule), do: raise "Rule :#{rule} not defined in Authorization module"
 
       def unauthorized_msg(_resolution), do: "unauthorized"
 

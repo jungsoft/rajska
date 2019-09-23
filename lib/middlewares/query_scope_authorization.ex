@@ -29,10 +29,19 @@ defmodule Rajska.QueryScopeAuthorization do
       middleware Rajska.QueryAuthorization, permit: :admin
       resolve &AccountsResolver.delete_user/2
     end
+
+    field :invite_user, :user do
+      arg :email, non_null(:string)
+
+      middleware Rajska.QueryAuthorization, [permit: :user, scoped: User, rule: :invitation]
+      resolve &AccountsResolver.invite_user/2
+    end
   end
   ```
 
   In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the `c:Rajska.Authorization.not_scoped_roles/0` function, but you can modify this behavior by overriding it.
+  The `rule` keyword is not mandatory and will be pattern matched in `c:Rajska.Authorization.has_user_access?/4`. This way different rules can be set to the same struct.
+  See `Rajska.Authorization` for `rule` default settings.
 
   Valid values for the `:scoped` keyword are:
   - `false`: disables scoping
@@ -58,7 +67,7 @@ defmodule Rajska.QueryScopeAuthorization do
       false ->
         scope_user!(
           resolution,
-          Keyword.get(scoped_config, :rule),
+          Keyword.get(scoped_config, :rule, :default),
           Keyword.delete(scoped_config, :rule)
         )
     end

@@ -24,11 +24,11 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     use Rajska,
       roles: [:user, :admin]
 
-    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
-    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id, nil), do: false
+    def has_user_access?(%{role: :admin}, User, _id, :default), do: true
+    def has_user_access?(%{id: user_id}, User, id, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id, :default), do: false
 
-    def has_user_access?(_current_user, BankAccount, _id, nil), do: false
+    def has_user_access?(_current_user, BankAccount, _id, :edit), do: false
     def has_user_access?(_current_user, BankAccount, _id, :read_only), do: true
   end
 
@@ -88,7 +88,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
         arg :id, :integer
         arg :params, :bank_account_params
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: BankAccount]
+        middleware Rajska.QueryAuthorization, [permit: :user, scoped: BankAccount, rule: :edit]
         resolve fn _, _ -> {:ok, %{total: 100}} end
       end
     end

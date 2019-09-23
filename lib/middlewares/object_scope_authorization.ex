@@ -11,6 +11,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   ```elixir
   object :user do
     meta :scope, User # Same as meta :scope, {User, :id}
+    meta :rule, :default
 
     field :id, :integer
     field :email, :string
@@ -21,6 +22,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   object :company do
     meta :scope, {Company, :user_id}
+    meta :rule, :default
 
     field :id, :integer
     field :user_id, :integer
@@ -30,6 +32,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   object :wallet do
     meta :scope, Wallet
+    meta :rule, :read_only
 
     field :total, :integer
   end
@@ -43,9 +46,9 @@ defmodule Rajska.ObjectScopeAuthorization do
       roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
-    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id, nil), do: false
+    def has_user_access?(%{role: :admin}, _struct, _field_value, _), do: true
+    def has_user_access?(%{id: user_id}, User, id, _) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field_value, _), do: false
   end
   ```
 
@@ -58,13 +61,29 @@ defmodule Rajska.ObjectScopeAuthorization do
       roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(_user, _, nil, nil), do: true
+    def has_user_access?(_user, _, nil, _), do: true
 
-    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
-    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id, nil), do: false
+    def has_user_access?(%{role: :admin}, User, _field_value, _), do: true
+    def has_user_access?(%{id: user_id}, User, id, _) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field_value, _), do: false
   end
   ```
+
+  The `rule` keyword is not mandatory and will be pattern matched in `has_user_access?/4`:
+
+  ```elixir
+  defmodule Authorization do
+    use Rajska,
+      roles: [:user, :admin]
+
+    @impl true
+    def has_user_access?(%{id: user_id}, Wallet, _field_value, :read_only), do: true
+    def has_user_access?(%{id: user_id}, Wallet, _field_value, :default), do: false
+  end
+  ```
+
+  This way different rules can be set to the same struct.
+  See `Rajska.Authorization` for `rule` default settings.
   """
 
   alias Absinthe.{Blueprint, Phase, Type}
@@ -95,7 +114,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
     scope = Type.meta(type, :scope)
-    rule = Type.meta(type, :rule)
+    rule = Type.meta(type, :rule) || :default
 
     case is_authorized?(scope, result.root_value, context, rule, type) do
       true -> %{result | fields: walk_result(fields, context)}
