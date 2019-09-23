@@ -23,7 +23,7 @@ defmodule Rajska do
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.is_role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/3` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.is_role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do
@@ -99,12 +99,14 @@ defmodule Rajska do
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, nil) do
         is_super_user? = current_user |> get_user_role() |> is_super_role?()
         is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
 
         is_super_user? || is_owner?
       end
+
+      def has_user_access?(_, _, _, rule), do: raise "Rule :#{rule} not defined in Authorization module"
 
       def unauthorized_msg(_resolution), do: "unauthorized"
 
@@ -128,10 +130,10 @@ defmodule Rajska do
         |> is_field_authorized?(scope_by, source)
       end
 
-      def has_context_access?(context, scoped_struct, field_value) do
+      def has_context_access?(context, scoped_struct, field_value, rule) do
         context
         |> get_current_user()
-        |> has_user_access?(scoped_struct, field_value)
+        |> has_user_access?(scoped_struct, field_value, rule)
       end
 
       defoverridable Authorization

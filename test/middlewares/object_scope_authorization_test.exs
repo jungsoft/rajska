@@ -17,17 +17,17 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
     def has_user_access?(_user, _, nil), do: true
 
-    def has_user_access?(%{role: :admin}, User, _id), do: true
-    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id), do: false
+    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
+    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id, nil), do: false
 
-    def has_user_access?(%{role: :admin}, Company, _id), do: true
-    def has_user_access?(%{id: user_id}, Company, company_user_id) when user_id === company_user_id, do: true
-    def has_user_access?(_current_user, Company, _id), do: false
+    def has_user_access?(%{role: :admin}, Company, _id, nil), do: true
+    def has_user_access?(%{id: user_id}, Company, company_user_id, nil) when user_id === company_user_id, do: true
+    def has_user_access?(_current_user, Company, _id, nil), do: false
 
-    def has_user_access?(%{role: :admin}, Wallet, _id), do: true
-    def has_user_access?(%{id: user_id}, Wallet, id) when user_id === id, do: true
-    def has_user_access?(_current_user, Wallet, _id), do: false
+    def has_user_access?(%{role: :admin}, Wallet, _id, nil), do: true
+    def has_user_access?(%{id: user_id}, Wallet, id, nil) when user_id === id, do: true
+    def has_user_access?(_current_user, Wallet, _id, nil), do: false
   end
 
   defmodule Schema do
@@ -118,7 +118,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :wallet do
-      meta :scope, Wallet
+      meta :scope, {Wallet, :user_id}
 
       field :total, :integer
     end

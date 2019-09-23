@@ -35,7 +35,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
   ```
 
-  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
+  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/4`. For example:
 
   ```elixir
   defmodule Authorization do
@@ -43,13 +43,13 @@ defmodule Rajska.ObjectScopeAuthorization do
       roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, User, _id), do: true
-    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id), do: false
+    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
+    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id, nil), do: false
   end
   ```
 
-  Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
+  Keep in mind that the `field_value` provided to `has_user_access?/4` can be `nil`. This case can be handled as you wish.
   For example, to not raise any authorization errors and just return `nil`:
 
   ```elixir
@@ -58,11 +58,11 @@ defmodule Rajska.ObjectScopeAuthorization do
       roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(_user, _, nil), do: true
+    def has_user_access?(_user, _, nil, nil), do: true
 
-    def has_user_access?(%{role: :admin}, User, _id), do: true
-    def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id), do: false
+    def has_user_access?(%{role: :admin}, User, _id, nil), do: true
+    def has_user_access?(%{id: user_id}, User, id, nil) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _id, nil), do: false
   end
   ```
   """
@@ -95,8 +95,9 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
     scope = Type.meta(type, :scope)
+    rule = Type.meta(type, :rule)
 
-    case is_authorized?(scope, result.root_value, context, type) do
+    case is_authorized?(scope, result.root_value, context, rule, type) do
       true -> %{result | fields: walk_result(fields, context)}
       false -> Map.put(result, :errors, [error(emitter)])
     end
@@ -119,18 +120,18 @@ defmodule Rajska.ObjectScopeAuthorization do
     walk_result(fields, context, new_fields)
   end
 
-  defp is_authorized?(nil, _values, _context, object), do: raise "No meta scope defined for object #{inspect object.identifier}"
+  defp is_authorized?(nil, _values, _context, _, object), do: raise "No meta scope defined for object #{inspect object.identifier}"
 
-  defp is_authorized?(false, _values, _context, _object), do: true
+  defp is_authorized?(false, _values, _context, _, _object), do: true
 
-  defp is_authorized?({scoped_struct, field}, values, context, _object) do
+  defp is_authorized?({scoped_struct, field}, values, context, rule, _object) do
     scoped_field_value = Map.get(values, field)
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value])
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value, rule])
   end
 
-  defp is_authorized?(scoped_struct, values, context, _object) do
+  defp is_authorized?(scoped_struct, values, context, rule, _object) do
     scoped_field_value = Map.get(values, :id)
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value])
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value, rule])
   end
 
   defp error(%{source_location: location, schema_node: %{type: type}}) do
