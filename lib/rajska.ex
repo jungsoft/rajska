@@ -110,7 +110,7 @@ defmodule Rajska do
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, :default) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, unquote(default_rule)) do
         is_super_user? = current_user |> get_user_role() |> is_super_role?()
         is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
 

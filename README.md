@@ -28,7 +28,7 @@ end
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -128,8 +128,8 @@ In the above example, `:all` and `:admin` permissions don't require the `:scoped
 Valid values for the `:scoped` keyword are:
 
 - `false`: disables scoping
-- `User`: a module that will be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). It must implement a [Authorization behaviour](https://hexdocs.pm/rajska/Rajska.Authorization.html) and a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska/Rajska.Schema.html#validate_query_auth_config!/2))
-- `{User, :id}`: where `:id` is the query argument that will also be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3)
+- `User`: a module that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4). It must implement a [Authorization behaviour](https://hexdocs.pm/rajska/Rajska.Authorization.html) and a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska/Rajska.Schema.html#validate_query_auth_config!/2))
+- `{User, :id}`: where `:id` is the query argument that will also be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
 - `{User, [:params, :id]}`: where `id` is the query argument as above, but it's not defined directly as an `arg` for the query. Instead, it's nested inside the `params` argument.
 - `{User, :user_group_id, :optional}`: where `user_group_id` (it could also be a nested argument) is an optional argument for the query. If it's present, the scoping will be applied, otherwise no scoping is applied.
 
@@ -219,7 +219,7 @@ object :wallet do
 end
 ```
 
-To define custom rules for the scoping, use [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). For example:
+To define custom rules for the scoping, use [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4). For example:
 
 ```elixir
 defmodule Authorization do
@@ -233,7 +233,7 @@ defmodule Authorization do
 end
 ```
 
-Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
+Keep in mind that the `field_value` provided to `has_user_access?/4` can be `nil`. This case can be handled as you wish.
 For example, to not raise any authorization errors and just return `nil`:
 
 ```elixir
