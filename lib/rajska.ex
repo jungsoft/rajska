@@ -87,6 +87,8 @@ defmodule Rajska do
 
       def user_role_names, do: unquote(roles_names)
 
+      def default_rule, do: unquote(default_rule)
+
       def valid_roles, do: [:all | user_role_names()]
 
       def not_scoped_roles, do: [:all | unquote(super_roles)]

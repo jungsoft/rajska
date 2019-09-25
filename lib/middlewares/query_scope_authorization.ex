@@ -65,9 +65,10 @@ defmodule Rajska.QueryScopeAuthorization do
     case Enum.member?(not_scoped_roles, permission) do
       true -> resolution
       false ->
+        default_rule = Rajska.apply_auth_mod(resolution.context, :default_rule)
         scope_user!(
           resolution,
-          Keyword.get(scoped_config, :rule, :default),
+          Keyword.get(scoped_config, :rule, default_rule),
           Keyword.delete(scoped_config, :rule)
         )
     end

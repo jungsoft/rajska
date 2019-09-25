@@ -46,9 +46,9 @@ defmodule Rajska.ObjectScopeAuthorization do
       roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, _struct, _field_value, _), do: true
-    def has_user_access?(%{id: user_id}, User, id, _) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field_value, _), do: false
+    def has_user_access?(%{role: :admin}, _struct, _field_value, _rule), do: true
+    def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field_value, _rule), do: false
   end
   ```
 
@@ -63,9 +63,9 @@ defmodule Rajska.ObjectScopeAuthorization do
     @impl true
     def has_user_access?(_user, _, nil, _), do: true
 
-    def has_user_access?(%{role: :admin}, User, _field_value, _), do: true
-    def has_user_access?(%{id: user_id}, User, id, _) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field_value, _), do: false
+    def has_user_access?(%{role: :admin}, User, _field_value, _rule), do: true
+    def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field_value, _rule), do: false
   end
   ```
 
@@ -114,7 +114,9 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
     scope = Type.meta(type, :scope)
-    rule = Type.meta(type, :rule) || :default
+
+    default_rule = Rajska.apply_auth_mod(context, :default_rule)
+    rule = Type.meta(type, :rule) || default_rule
 
     case is_authorized?(scope, result.root_value, context, rule, type) do
       true -> %{result | fields: walk_result(fields, context)}

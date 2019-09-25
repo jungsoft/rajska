@@ -23,7 +23,7 @@ defmodule Rajska.Authorization do
 
   @callback is_field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
 
-  @callback has_user_access?(current_user, scoped_struct :: module(), field_value :: any(), role :: any()) :: boolean()
+  @callback has_user_access?(current_user, scoped_struct :: module(), field_value :: any(), rule :: any()) :: boolean()
 
   @callback unauthorized_msg(resolution :: Resolution.t()) :: String.t()
 
