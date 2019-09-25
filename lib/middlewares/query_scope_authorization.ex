@@ -55,6 +55,8 @@ defmodule Rajska.QueryScopeAuthorization do
 
   alias Absinthe.{Resolution, Type}
 
+  alias Rajska.Introspection
+
   def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
   def call(resolution, [_ | [scoped: false]]), do: resolution
@@ -133,6 +135,7 @@ defmodule Rajska.QueryScopeAuthorization do
     false,
     %Resolution{definition: %{schema_node: %{type: object_type}}} = resolution
   ) do
+    object_type = Introspection.get_object_type(object_type)
     put_error(resolution, "Not authorized to access this #{replace_underscore(object_type)}")
   end
 
