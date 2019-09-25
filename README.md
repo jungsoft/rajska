@@ -21,7 +21,7 @@ The package can be installed by adding `rajska` to your list of dependencies in 
 ```elixir
 def deps do
   [
-    {:rajska, "~> 0.4.0"},
+    {:rajska, "~> 0.4.1"},
   ]
 end
 ```
@@ -227,9 +227,9 @@ defmodule Authorization do
     roles: [:user, :admin]
 
   @impl true
-  def has_user_access?(%{role: :admin}, User, _id), do: true
-  def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
-  def has_user_access?(_current_user, User, _id), do: false
+  def has_user_access?(%{role: :admin}, User, _id, _rule), do: true
+  def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
+  def has_user_access?(_current_user, User, _id, _rule), do: false
 end
 ```
 
@@ -244,9 +244,9 @@ defmodule Authorization do
   @impl true
   def has_user_access?(_user, _, nil), do: true
 
-  def has_user_access?(%{role: :admin}, User, _id), do: true
-  def has_user_access?(%{id: user_id}, User, id) when user_id === id, do: true
-  def has_user_access?(_current_user, User, _id), do: false
+  def has_user_access?(%{role: :admin}, User, _id, _rule), do: true
+  def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
+  def has_user_access?(_current_user, User, _id, _rule), do: false
 end
 ```
 
