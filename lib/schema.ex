@@ -57,6 +57,13 @@ defmodule Rajska.Schema do
     ],
     module()
   ) :: :ok | Exception.t()
+
+  def validate_query_auth_config!([permit: _, scoped: _, rule: _] = config, authorization) do
+    config
+    |> Keyword.delete(:rule)
+    |> validate_query_auth_config!(authorization)
+  end
+
   def validate_query_auth_config!([permit: _, scoped: false] = _config, _authorization), do: :ok
 
   def validate_query_auth_config!([permit: _, scoped: :source], _authorization), do: :ok

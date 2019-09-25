@@ -29,15 +29,24 @@ defmodule Rajska.QueryScopeAuthorization do
       middleware Rajska.QueryAuthorization, permit: :admin
       resolve &AccountsResolver.delete_user/2
     end
+
+    field :invite_user, :user do
+      arg :email, non_null(:string)
+
+      middleware Rajska.QueryAuthorization, [permit: :user, scoped: User, rule: :invitation]
+      resolve &AccountsResolver.invite_user/2
+    end
   end
   ```
 
   In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the `c:Rajska.Authorization.not_scoped_roles/0` function, but you can modify this behavior by overriding it.
+  The `rule` keyword is not mandatory and will be pattern matched in `c:Rajska.Authorization.has_user_access?/4`. This way different rules can be set to the same struct.
+  See `Rajska.Authorization` for `rule` default settings.
 
   Valid values for the `:scoped` keyword are:
   - `false`: disables scoping
-  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
-  - `{User, :id}`: where `:id` is the query argument that will also be passed to `c:Rajska.Authorization.has_user_access?/3`
+  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+  - `{User, :id}`: where `:id` is the query argument that will also be passed to `c:Rajska.Authorization.has_user_access?/4`
   - `{User, [:params, :id]}`: where `id` is the query argument as above, but it's not defined directly as an `arg` for the query. Instead, it's nested inside the `params` argument.
   - `{User, :user_group_id, :optional}`: where `user_group_id` (it could also be a nested argument) is an optional argument for the query. If it's present, the scoping will be applied, otherwise no scoping is applied.
   """
@@ -55,31 +64,37 @@ defmodule Rajska.QueryScopeAuthorization do
 
     case Enum.member?(not_scoped_roles, permission) do
       true -> resolution
-      false -> scope_user!(resolution, scoped_config)
+      false ->
+        default_rule = Rajska.apply_auth_mod(resolution.context, :default_rule)
+        scope_user!(
+          resolution,
+          Keyword.get(scoped_config, :rule, default_rule),
+          Keyword.delete(scoped_config, :rule)
+        )
     end
   end
 
-  def scope_user!(%Resolution{source: source} = resolution, scoped: :source) do
-    apply_scope_authorization(resolution, get_scoped_field_value(source, :id), source.__struct__)
+  def scope_user!(%Resolution{source: source} = resolution, rule, scoped: :source) do
+    apply_scope_authorization(resolution, get_scoped_field_value(source, :id), source.__struct__, rule)
   end
 
-  def scope_user!(%Resolution{source: source} = resolution, scoped: {:source, scoped_field}) do
-    apply_scope_authorization(resolution, get_scoped_field_value(source, scoped_field), source.__struct__)
+  def scope_user!(%Resolution{source: source} = resolution, rule, scoped: {:source, scoped_field}) do
+    apply_scope_authorization(resolution, get_scoped_field_value(source, scoped_field), source.__struct__, rule)
   end
 
-  def scope_user!(%Resolution{arguments: args} = resolution, scoped: {scoped_struct, scoped_field}) do
-    apply_scope_authorization(resolution, get_scoped_field_value(args, scoped_field), scoped_struct)
+  def scope_user!(%Resolution{arguments: args} = resolution, rule, scoped: {scoped_struct, scoped_field}) do
+    apply_scope_authorization(resolution, get_scoped_field_value(args, scoped_field), scoped_struct, rule)
   end
 
-  def scope_user!(%Resolution{arguments: args} = resolution, scoped: {scoped_struct, scoped_field, :optional}) do
+  def scope_user!(%Resolution{arguments: args} = resolution, rule, scoped: {scoped_struct, scoped_field, :optional}) do
     case get_scoped_field_value(args, scoped_field) do
       nil -> update_result(true, resolution)
-      field_value -> apply_scope_authorization(resolution, field_value, scoped_struct)
+      field_value -> apply_scope_authorization(resolution, field_value, scoped_struct, rule)
     end
   end
 
-  def scope_user!(%Resolution{arguments: args} = resolution, scoped: scoped_struct) do
-    apply_scope_authorization(resolution, get_scoped_field_value(args, :id), scoped_struct)
+  def scope_user!(%Resolution{arguments: args} = resolution, rule, scoped: scoped_struct) do
+    apply_scope_authorization(resolution, get_scoped_field_value(args, :id), scoped_struct, rule)
   end
 
   def scope_user!(
@@ -89,25 +104,26 @@ defmodule Rajska.QueryScopeAuthorization do
         schema_node: %{type: %Type.List{of_type: _}}
       }
     },
+    _,
     _scoped_config
   ) do
     raise "Error in query #{name}: Scope Authorization can't be used with a list query object type"
   end
 
-  def scope_user!(%Resolution{definition: %{name: name}}, _scoped_config) do
+  def scope_user!(%Resolution{definition: %{name: name}}, _, _scoped_config) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
 
   defp get_scoped_field_value(args, fields) when is_list(fields), do: get_in(args, fields)
   defp get_scoped_field_value(args, field) when is_atom(field), do: Map.get(args, field)
 
-  def apply_scope_authorization(%Resolution{definition: %{name: name}}, nil, _scoped_struct) do
+  def apply_scope_authorization(%Resolution{definition: %{name: name}}, nil, _scoped_struct, _) do
     raise "Error in query #{name}: no argument found in middleware Scope Authorization"
   end
 
-  def apply_scope_authorization(%{context: context} = resolution, field_value, scoped_struct) do
+  def apply_scope_authorization(%{context: context} = resolution, field_value, scoped_struct, rule) do
     context
-    |> Rajska.apply_auth_mod(:has_context_access?, [context, scoped_struct, field_value])
+    |> Rajska.apply_auth_mod(:has_context_access?, [context, scoped_struct, field_value, rule])
     |> update_result(resolution)
   end
 

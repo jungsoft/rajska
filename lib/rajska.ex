@@ -23,16 +23,19 @@ defmodule Rajska do
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.is_role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/3` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.is_role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      roles: [:user, :admin],
+      default_rule: :default
   end
   ```
 
   Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `c:Rajska.Authorization.is_super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
+
+  Note: if the `:default_rule` is not given, `:default` is used as it's value.
 
   Add your Authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
@@ -63,12 +66,18 @@ defmodule Rajska do
     roles_names = get_role_names(roles)
     super_roles = get_super_roles(roles_with_tier)
 
+    default_rule =  Keyword.get(opts, :default_rule, :default)
+
     quote do
       @behaviour Authorization
 
       @spec config() :: Keyword.t()
       def config do
-        Keyword.merge(unquote(opts), [all_role: unquote(all_role), roles: unquote(roles_with_tier)])
+        Keyword.merge(unquote(opts), [
+          all_role: unquote(all_role),
+          roles: unquote(roles_with_tier),
+          default_rule: unquote(default_rule)
+        ])
       end
 
       def get_current_user(%{current_user: current_user}), do: current_user
@@ -77,6 +86,8 @@ defmodule Rajska do
       def get_user_role(nil), do: nil
 
       def user_role_names, do: unquote(roles_names)
+
+      def default_rule, do: unquote(default_rule)
 
       def valid_roles, do: [:all | user_role_names()]
 
@@ -99,7 +110,7 @@ defmodule Rajska do
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, :default) do
         is_super_user? = current_user |> get_user_role() |> is_super_role?()
         is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
 
@@ -128,10 +139,10 @@ defmodule Rajska do
         |> is_field_authorized?(scope_by, source)
       end
 
-      def has_context_access?(context, scoped_struct, field_value) do
+      def has_context_access?(context, scoped_struct, field_value, rule) do
         context
         |> get_current_user()
-        |> has_user_access?(scoped_struct, field_value)
+        |> has_user_access?(scoped_struct, field_value, rule)
       end
 
       defoverridable Authorization
