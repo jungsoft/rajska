@@ -43,7 +43,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin]
 
     @impl true
     def has_user_access?(%{role: :admin}, _struct, _field_value, _rule), do: true
@@ -58,7 +58,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin]
 
     @impl true
     def has_user_access?(_user, _, nil, _), do: true
@@ -74,7 +74,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin]
 
     @impl true
     def has_user_access?(%{id: user_id}, Wallet, _field_value, :read_only), do: true

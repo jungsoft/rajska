@@ -3,7 +3,8 @@ defmodule Rajska.FieldAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_roles: [:admin]
   end
 
   defmodule Schema do

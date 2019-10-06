@@ -96,16 +96,17 @@ defmodule Rajska do
 
       def not_scoped_roles, do: [unquote(all_role) | unquote(super_roles)]
 
-      defguard super_role?(role) when role in unquote(super_roles)
-      defguard all_role?(role) when role == unquote(all_role)
+      defguard is_super_role(role) when role in unquote(super_roles)
+      defguard is_all_role(role) when role === unquote(all_role)
 
-      def super_role?(user_role) when super_role?(user_role), do: true
+      def super_role?(user_role) when is_super_role(user_role), do: true
       def super_role?(_user_role), do: false
 
-      def all_role?(user_role) when all_role?(user_role), do: true
+      def all_role?(user_role) when is_all_role(user_role), do: true
       def all_role?(_user_role), do: false
 
-      def role_authorized?(user_role, allowed_role) when super_role?(user_role) or all_role?(allowed_role), do: true
+      def role_authorized?(user_role, _allowed_role) when is_super_role(user_role), do: true
+      def role_authorized?(_user_role, allowed_role) when is_all_role(allowed_role), do: true
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
