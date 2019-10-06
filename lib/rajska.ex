@@ -33,7 +33,7 @@ defmodule Rajska do
   end
   ```
 
-  Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `c:Rajska.Authorization.is_super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
+  Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order. You can override this behavior by passing super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
 
   Note: if the `:default_rule` is not given, `:default` is used as it's value.
 
@@ -61,11 +61,8 @@ defmodule Rajska do
 
   defmacro __using__(opts \\ []) do
     all_role = Keyword.get(opts, :all_role, :all)
-    roles = Keyword.get(opts, :roles)
-    roles_with_tier = add_tier_to_roles!(roles)
-    roles_names = get_role_names(roles)
-    super_roles = get_super_roles(roles_with_tier)
-
+    valid_roles = Keyword.get(opts, :valid_roles, [])
+    super_roles = Keyword.get(opts, :super_roles, [])
     default_rule =  Keyword.get(opts, :default_rule, :default)
 
     quote do
@@ -75,7 +72,8 @@ defmodule Rajska do
       def config do
         Keyword.merge(unquote(opts), [
           all_role: unquote(all_role),
-          roles: unquote(roles_with_tier),
+          valid_roles: unquote(valid_roles),
+          super_roles: unquote(super_roles),
           default_rule: unquote(default_rule)
         ])
       end
@@ -85,25 +83,22 @@ defmodule Rajska do
       def get_user_role(%{role: role}), do: role
       def get_user_role(nil), do: nil
 
-      def user_role_names, do: unquote(roles_names)
-
       def default_rule, do: unquote(default_rule)
 
-      def valid_roles, do: [:all | user_role_names()]
+      def valid_roles, do: unquote(valid_roles)
 
-      def not_scoped_roles, do: [:all | unquote(super_roles)]
+      def not_scoped_roles, do: [unquote(all_role) | unquote(super_roles)]
 
       defguard super_role?(role) when role in unquote(super_roles)
       defguard all_role?(role) when role == unquote(all_role)
 
-      def is_super_role?(user_role) when super_role?(user_role), do: true
-      def is_super_role?(_user_role), do: false
+      def super_role?(user_role) when super_role?(user_role), do: true
+      def super_role?(_user_role), do: false
 
-      def is_all_role?(user_role) when all_role?(user_role), do: true
-      def is_all_role?(_user_role), do: false
+      def all_role?(user_role) when all_role?(user_role), do: true
+      def all_role?(_user_role), do: false
 
-      def is_role_authorized?(_user_role, unquote(all_role)), do: true
-      def is_role_authorized?(user_role, _allowed_role) when user_role in unquote(super_roles), do: true
+      def is_role_authorized?(user_role, allowed_role) when super_role?(user_role) or all_role?(allowed_role), do: true
       def is_role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def is_role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
@@ -111,7 +106,7 @@ defmodule Rajska do
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
       def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, unquote(default_rule)) do
-        is_super_user? = current_user |> get_user_role() |> is_super_role?()
+        is_super_user? = current_user |> get_user_role() |> super_role?()
         is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
 
         is_super_user? || is_owner?
@@ -123,7 +118,7 @@ defmodule Rajska do
         context
         |> get_current_user()
         |> get_user_role()
-        |> is_super_role?()
+        |> super_role?()
       end
 
       def is_context_authorized?(context, allowed_role) do
@@ -147,35 +142,6 @@ defmodule Rajska do
 
       defoverridable Authorization
     end
-  end
-
-  @doc false
-  def add_tier_to_roles!(roles) when is_list(roles) do
-    case Keyword.keyword?(roles) do
-      true -> roles
-      false -> Enum.with_index(roles, 1)
-    end
-  end
-
-  def add_tier_to_roles!(nil) do
-    raise "No roles configured in Rajska's authorization module"
-  end
-
-  @doc false
-  def get_role_names(roles) when is_list(roles) do
-    case Keyword.keyword?(roles) do
-      true -> Enum.map(roles, fn {role, _tier} -> role end)
-      false -> roles
-    end
-  end
-
-  @doc false
-  def get_super_roles(roles) do
-    {_, max_tier} = Enum.max_by(roles, fn {_, tier} -> tier end)
-
-    roles
-    |> Enum.filter(fn {_, tier} -> tier === max_tier end)
-    |> Enum.map(fn {role, _} -> role end)
   end
 
   @doc false
