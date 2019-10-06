@@ -47,7 +47,7 @@ defmodule Rajska.ObjectAuthorization do
   }
   ```
 
-  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the `c:Rajska.Authorization.is_role_authorized?/2` function (which is also used by Query Authorization). It can be overridden by your own implementation.
+  Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the `c:Rajska.Authorization.role_authorized?/2` function (which is also used by Query Authorization). It can be overridden by your own implementation.
   """
 
   @behaviour Absinthe.Middleware

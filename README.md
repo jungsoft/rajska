@@ -28,7 +28,7 @@ end
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -117,7 +117,7 @@ Usage:
   end
 ```
 
-Query authorization will call [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
+Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
 
 ### Query Scope Authorization
 
@@ -180,7 +180,7 @@ With the permissions above, a query like the following would only be allowed by 
 }
 ```
 
-Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
 
 ### Object Scope Authorization
 

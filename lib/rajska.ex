@@ -23,7 +23,7 @@ defmodule Rajska do
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.is_role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do
@@ -98,9 +98,9 @@ defmodule Rajska do
       def all_role?(user_role) when all_role?(user_role), do: true
       def all_role?(_user_role), do: false
 
-      def is_role_authorized?(user_role, allowed_role) when super_role?(user_role) or all_role?(allowed_role), do: true
-      def is_role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
-      def is_role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
+      def role_authorized?(user_role, allowed_role) when super_role?(user_role) or all_role?(allowed_role), do: true
+      def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
+      def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
       def is_field_authorized?(nil, _scope_by, _source), do: false
       def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
@@ -125,7 +125,7 @@ defmodule Rajska do
         context
         |> get_current_user()
         |> get_user_role()
-        |> is_role_authorized?(allowed_role)
+        |> role_authorized?(allowed_role)
       end
 
       def is_context_field_authorized?(context, scope_by, source) do

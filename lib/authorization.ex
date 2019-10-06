@@ -15,7 +15,7 @@ defmodule Rajska.Authorization do
 
   @callback not_scoped_roles() :: list(role)
 
-  @callback is_role_authorized?(current_user_role, allowed_role :: role) :: boolean()
+  @callback role_authorized?(current_user_role, allowed_role :: role) :: boolean()
 
   @callback is_field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
 
@@ -26,7 +26,7 @@ defmodule Rajska.Authorization do
   @optional_callbacks get_current_user: 1,
                       get_user_role: 1,
                       not_scoped_roles: 0,
-                      is_role_authorized?: 2,
+                      role_authorized?: 2,
                       is_field_authorized?: 3,
                       has_user_access?: 4,
                       unauthorized_msg: 1
