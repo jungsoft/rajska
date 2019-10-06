@@ -44,7 +44,7 @@ defmodule Rajska.QueryAuthorization do
     validate_permission!(context, permission)
 
     context
-    |> Rajska.apply_auth_mod(:is_context_authorized?, [context, permission])
+    |> Rajska.apply_auth_mod(:context_authorized?, [context, permission])
     |> update_result(resolution)
     |> QueryScopeAuthorization.call(config)
   end

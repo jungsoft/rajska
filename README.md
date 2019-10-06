@@ -28,7 +28,7 @@ end
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -36,8 +36,6 @@ Create your Authorization module, which will implement the [Rajska Authorization
       roles: [:user, :admin]
   end
 ```
-
-Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or define your `roles` as a Keyword list in the format `[user: 0, admin: 1]`.
 
 Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
@@ -252,7 +250,7 @@ end
 
 ### Field Authorization
 
-Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
 Usage:
 

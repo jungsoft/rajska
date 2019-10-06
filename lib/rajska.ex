@@ -23,7 +23,7 @@ defmodule Rajska do
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.is_field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.field_authorized?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do
@@ -102,36 +102,36 @@ defmodule Rajska do
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
-      def is_field_authorized?(nil, _scope_by, _source), do: false
-      def is_field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
+      def field_authorized?(nil, _scope_by, _source), do: false
+      def field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
       def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, unquote(default_rule)) do
-        is_super_user? = current_user |> get_user_role() |> super_role?()
-        is_owner? = (user_struct === scoped_struct) && (user_id === field_value)
+        super_user? = current_user |> get_user_role() |> super_role?()
+        owner? = (user_struct === scoped_struct) && (user_id === field_value)
 
-        is_super_user? || is_owner?
+        super_user? || owner?
       end
 
       def unauthorized_msg(_resolution), do: "unauthorized"
 
-      def is_super_user?(context) do
+      def super_user?(context) do
         context
         |> get_current_user()
         |> get_user_role()
         |> super_role?()
       end
 
-      def is_context_authorized?(context, allowed_role) do
+      def context_authorized?(context, allowed_role) do
         context
         |> get_current_user()
         |> get_user_role()
         |> role_authorized?(allowed_role)
       end
 
-      def is_context_field_authorized?(context, scope_by, source) do
+      def context_field_authorized?(context, scope_by, source) do
         context
         |> get_current_user()
-        |> is_field_authorized?(scope_by, source)
+        |> field_authorized?(scope_by, source)
       end
 
       def has_context_access?(context, scoped_struct, field_value, rule) do

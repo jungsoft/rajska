@@ -2,7 +2,7 @@ defmodule Rajska.FieldAuthorization do
   @moduledoc """
   Absinthe middleware to ensure field permissions.
 
-  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the `c:Rajska.Authorization.is_field_authorized?/3` function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the `c:Rajska.Authorization.field_authorized?/3` function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
   ## Usage
 
@@ -31,18 +31,18 @@ defmodule Rajska.FieldAuthorization do
   }
 
   def call(resolution, [object: %Type.Object{fields: fields} = object, field: field]) do
-    is_field_private? = fields[field] |> Type.meta(:private) |> is_field_private?(resolution.source)
-    scope_by = get_scope_by_field!(object, is_field_private?)
+    field_private? = fields[field] |> Type.meta(:private) |> field_private?(resolution.source)
+    scope_by = get_scope_by_field!(object, field_private?)
 
     resolution
     |> Map.get(:context)
-    |> authorized?(is_field_private?, scope_by, resolution.source)
+    |> authorized?(field_private?, scope_by, resolution.source)
     |> put_result(resolution, field)
   end
 
-  defp is_field_private?(true, _source), do: true
-  defp is_field_private?(private, source) when is_function(private), do: private.(source)
-  defp is_field_private?(_private, _source), do: false
+  defp field_private?(true, _source), do: true
+  defp field_private?(private, source) when is_function(private), do: private.(source)
+  defp field_private?(_private, _source), do: false
 
   defp get_scope_by_field!(_object, false), do: :ok
 
@@ -56,9 +56,9 @@ defmodule Rajska.FieldAuthorization do
   defp authorized?(_context, false, _scope_by, _source), do: true
 
   defp authorized?(context, true, scope_by, source) do
-    case Rajska.apply_auth_mod(context, :is_super_user?, [context]) do
+    case Rajska.apply_auth_mod(context, :super_user?, [context]) do
       true -> true
-      false -> Rajska.apply_auth_mod(context, :is_context_field_authorized?, [context, scope_by, source])
+      false -> Rajska.apply_auth_mod(context, :context_field_authorized?, [context, scope_by, source])
     end
   end
 

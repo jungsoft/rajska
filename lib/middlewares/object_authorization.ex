@@ -87,14 +87,14 @@ defmodule Rajska.ObjectAuthorization do
   defp authorize_object(object, fields, resolution) do
     object
     |> Type.meta(:authorize)
-    |> is_authorized?(resolution.context, object)
+    |> authorized?(resolution.context, object)
     |> put_result(fields, resolution, object)
   end
 
-  defp is_authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
+  defp authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 
-  defp is_authorized?(permission, context, _object) do
-    Rajska.apply_auth_mod(context, :is_context_authorized?, [context, permission])
+  defp authorized?(permission, context, _object) do
+    Rajska.apply_auth_mod(context, :context_authorized?, [context, permission])
   end
 
   defp put_result(true, fields, resolution, _type), do: find_associations(fields, resolution)
