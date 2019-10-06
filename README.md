@@ -33,7 +33,10 @@ Create your Authorization module, which will implement the [Rajska Authorization
 ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:all, :user, :admin],
+      all_role: :all,
+      super_roles: [:admin],
+      default_rule: :default
   end
 ```
 
@@ -121,7 +124,7 @@ Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Raj
 
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
-In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function, but you can modify this behavior by overriding it.
+In the above example, `:all` (`all_role`) and `:admin` (`super_role`) permissions don't require the `:scoped` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
 Valid values for the `:scoped` keyword are:
 
@@ -222,7 +225,8 @@ To define custom rules for the scoping, use [has_user_access?/4](https://hexdocs
 ```elixir
 defmodule Authorization do
   use Rajska,
-    roles: [:user, :admin]
+    valid_roles: [:user, :admin],
+    super_roles: [:admin]
 
   @impl true
   def has_user_access?(%{role: :admin}, User, _id, _rule), do: true
@@ -237,7 +241,8 @@ For example, to not raise any authorization errors and just return `nil`:
 ```elixir
 defmodule Authorization do
   use Rajska,
-    roles: [:user, :admin]
+    valid_roles: [:user, :admin],
+    super_roles: [:admin]
 
   @impl true
   def has_user_access?(_user, _, nil), do: true

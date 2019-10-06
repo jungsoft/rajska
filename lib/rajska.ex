@@ -28,14 +28,21 @@ defmodule Rajska do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin],
+      valid_roles: [:all, :user, :admin],
+      all_role: :all,
+      super_roles: [:admin],
       default_rule: :default
   end
   ```
 
-  Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order. You can override this behavior by passing super_role?/1` function or passing a Keyword list in the format `[user: 0, admin: 1]`.
+  Default values:
 
-  Note: if the `:default_rule` is not given, `:default` is used as it's value.
+  ```elixir
+  valid_roles: [],
+  all_role: :all,
+  super_roles: [],
+  default_rule: :default
+  ```
 
   Add your Authorization module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
