@@ -3,8 +3,8 @@ defmodule Rajska.SchemaTest do
 
   defmodule Authorization do
     use Rajska,
-      valid_roles: [:all, :user, :admin],
-      super_roles: [:admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
   end
 
   test "Raises if no permission is specified for a query" do

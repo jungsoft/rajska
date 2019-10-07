@@ -3,8 +3,8 @@ defmodule Rajska.QueryAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      valid_roles: [:all, :viewer, :user, :admin],
-      super_roles: [:admin]
+      valid_roles: [:viewer, :user, :admin],
+      super_role: :admin
   end
 
   defmodule Schema do

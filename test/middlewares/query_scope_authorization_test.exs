@@ -23,7 +23,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
   defmodule Authorization do
     use Rajska,
       valid_roles: [:user, :admin],
-      super_roles: [:admin]
+      super_role: :admin
 
     def has_user_access?(%{role: :admin}, User, _id, :default), do: true
     def has_user_access?(%{id: user_id}, User, id, :default) when user_id === id, do: true

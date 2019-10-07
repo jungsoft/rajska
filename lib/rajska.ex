@@ -28,19 +28,15 @@ defmodule Rajska do
   ```elixir
   defmodule Authorization do
     use Rajska,
-      valid_roles: [:all, :user, :admin],
-      all_role: :all,
-      super_roles: [:admin],
-      default_rule: :default
+      valid_roles: [:user, :admin]
   end
   ```
 
-  Default values:
+  Available options and their default values:
 
   ```elixir
-  valid_roles: [],
-  all_role: :all,
-  super_roles: [],
+  valid_roles: [:admin],
+  super_role: :admin,
   default_rule: :default
   ```
 
@@ -67,9 +63,8 @@ defmodule Rajska do
   alias Rajska.Authorization
 
   defmacro __using__(opts \\ []) do
-    all_role = Keyword.get(opts, :all_role, :all)
-    valid_roles = Keyword.get(opts, :valid_roles, [])
-    super_roles = Keyword.get(opts, :super_roles, [])
+    super_role = Keyword.get(opts, :super_role, :admin)
+    valid_roles = Keyword.get(opts, :valid_roles, [super_role])
     default_rule =  Keyword.get(opts, :default_rule, :default)
 
     quote do
@@ -78,9 +73,8 @@ defmodule Rajska do
       @spec config() :: Keyword.t()
       def config do
         Keyword.merge(unquote(opts), [
-          all_role: unquote(all_role),
           valid_roles: unquote(valid_roles),
-          super_roles: unquote(super_roles),
+          super_role: unquote(super_role),
           default_rule: unquote(default_rule)
         ])
       end
@@ -92,21 +86,15 @@ defmodule Rajska do
 
       def default_rule, do: unquote(default_rule)
 
-      def valid_roles, do: unquote(valid_roles)
+      def valid_roles, do: [:all | unquote(valid_roles)]
 
-      def not_scoped_roles, do: [unquote(all_role) | unquote(super_roles)]
+      def not_scoped_roles, do: [:all, unquote(super_role)]
 
-      defguard is_super_role(role) when role in unquote(super_roles)
-      defguard is_all_role(role) when role === unquote(all_role)
-
-      def super_role?(user_role) when is_super_role(user_role), do: true
+      def super_role?(unquote(super_role)), do: true
       def super_role?(_user_role), do: false
 
-      def all_role?(user_role) when is_all_role(user_role), do: true
-      def all_role?(_user_role), do: false
-
-      def role_authorized?(user_role, _allowed_role) when is_super_role(user_role), do: true
-      def role_authorized?(_user_role, allowed_role) when is_all_role(allowed_role), do: true
+      def role_authorized?(_user_role, :all), do: true
+      def role_authorized?(unquote(super_role), _allowed_role), do: true
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
