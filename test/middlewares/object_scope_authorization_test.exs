@@ -13,7 +13,8 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
 
     def has_user_access?(%{role: :admin}, User, _id, :default), do: true
     def has_user_access?(%{id: user_id}, User, id, :default) when user_id === id, do: true
@@ -36,7 +37,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     def middleware(middleware, _field, _object), do: middleware
 
     query do
-      field :all_query, :user do
+      field :all_query, non_null(:user) do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
@@ -79,6 +80,13 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         end
       end
 
+      field :object_not_scoped_query, :user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ ->
+          {:ok, %{id: args.id, name: "bob", not_scoped: %{name: "name"}}}
+        end
+      end
+
       field :users_query, list_of(:user) do
         resolve fn _args, _ ->
           {:ok, [
@@ -104,6 +112,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
       field :company, :company
       field :companies, list_of(:company)
+      field :not_scoped, :not_scoped
     end
 
     object :company do
@@ -119,6 +128,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       meta :scope, {Wallet, :user_id}
 
       field :total, :integer
+    end
+
+    object :not_scoped do
+      field :name, :string
     end
   end
 
@@ -244,12 +257,30 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Raises when no meta scope is defined for an object" do
+    assert_raise RuntimeError, ~r/No meta scope defined for object :not_scoped/, fn ->
+      assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
+  end
+
   defp all_query(id) do
     """
     {
       allQuery(userId: #{id}) {
         name
         email
+      }
+    }
+    """
+  end
+
+  defp object_not_scoped_query(id) do
+    """
+    {
+      objectNotScopedQuery(id: #{id}) {
+        notScoped {
+          name
+        }
       }
     }
     """

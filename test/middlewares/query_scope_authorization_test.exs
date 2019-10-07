@@ -22,7 +22,8 @@ defmodule Rajska.QueryScopeAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
 
     def has_user_access?(%{role: :admin}, User, _id, :default), do: true
     def has_user_access?(%{id: user_id}, User, id, :default) when user_id === id, do: true
@@ -38,7 +39,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
     def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
-    when identifier in [:query, :mutation, :subscription] do
+    when identifier in [:query, :mutation] do
       Rajska.add_query_authorization(middleware, field, Authorization)
     end
 

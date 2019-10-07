@@ -32,7 +32,7 @@ defmodule Rajska.QueryAuthorization do
   end
   ```
 
-  Query authorization will call `c:Rajska.Authorization.is_role_authorized?/2` to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
+  Query authorization will call `c:Rajska.Authorization.role_authorized?/2` to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
   """
   alias Absinthe.Resolution
 
@@ -44,7 +44,7 @@ defmodule Rajska.QueryAuthorization do
     validate_permission!(context, permission)
 
     context
-    |> Rajska.apply_auth_mod(:is_context_authorized?, [context, permission])
+    |> Rajska.apply_auth_mod(:context_authorized?, [context, permission])
     |> update_result(resolution)
     |> QueryScopeAuthorization.call(config)
   end

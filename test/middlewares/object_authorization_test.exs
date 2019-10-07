@@ -3,7 +3,8 @@ defmodule Rajska.ObjectAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
   end
 
   defmodule Schema do
@@ -12,7 +13,7 @@ defmodule Rajska.ObjectAuthorizationTest do
     def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
     def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
-    when identifier in [:query, :mutation, :subscription] do
+    when identifier in [:query, :mutation] do
       middleware
       |> Rajska.add_query_authorization(field, Authorization)
       |> Rajska.add_object_authorization()

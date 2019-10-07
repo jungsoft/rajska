@@ -3,7 +3,8 @@ defmodule Rajska.FieldAuthorizationTest do
 
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
   end
 
   defmodule Schema do
@@ -12,7 +13,7 @@ defmodule Rajska.FieldAuthorizationTest do
     def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
     def middleware(middleware, field, %{identifier: identifier} = object)
-    when identifier not in [:query, :mutation, :subscription] do
+    when identifier not in [:query, :mutation] do
       Rajska.add_field_authorization(middleware, field, object)
     end
 

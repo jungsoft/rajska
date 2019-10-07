@@ -53,7 +53,7 @@ defmodule Rajska.QueryScopeAuthorization do
 
   @behaviour Absinthe.Middleware
 
-  alias Absinthe.{Resolution, Type}
+  alias Absinthe.Resolution
 
   alias Rajska.Introspection
 
@@ -99,19 +99,6 @@ defmodule Rajska.QueryScopeAuthorization do
     apply_scope_authorization(resolution, get_scoped_field_value(args, :id), scoped_struct, rule)
   end
 
-  def scope_user!(
-    %Resolution{
-      definition: %{
-        name: name,
-        schema_node: %{type: %Type.List{of_type: _}}
-      }
-    },
-    _,
-    _scoped_config
-  ) do
-    raise "Error in query #{name}: Scope Authorization can't be used with a list query object type"
-  end
-
   def scope_user!(%Resolution{definition: %{name: name}}, _, _scoped_config) do
     raise "Error in query #{name}: no scoped argument found in middleware Scope Authorization"
   end
@@ -138,8 +125,6 @@ defmodule Rajska.QueryScopeAuthorization do
     object_type = Introspection.get_object_type(object_type)
     put_error(resolution, "Not authorized to access this #{replace_underscore(object_type)}")
   end
-
-  defp update_result({:error, msg}, resolution), do: put_error(resolution, msg)
 
   defp put_error(resolution, message), do: Resolution.put_result(resolution, {:error, message})
 

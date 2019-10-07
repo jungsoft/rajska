@@ -21,23 +21,23 @@ The package can be installed by adding `rajska` to your list of dependencies in 
 ```elixir
 def deps do
   [
-    {:rajska, "~> 0.4.1"},
+    {:rajska, "~> 0.5.0"},
   ]
 end
 ```
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
     use Rajska,
-      roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin,
+      default_rule: :default
   end
 ```
-
-Note: if you pass a non Keyword list to `roles`, as above, Rajska will assume your roles are in ascending order and the last one is the super role. You can override this behavior by defining your own `is_super_role?/1` function or define your `roles` as a Keyword list in the format `[user: 0, admin: 1]`.
 
 Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
@@ -117,13 +117,13 @@ Usage:
   end
 ```
 
-Query authorization will call [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
+Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
 
 ### Query Scope Authorization
 
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
-In the above example, `:all` and `:admin` permissions don't require the `:scoped` keyword, as defined in the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function, but you can modify this behavior by overriding it.
+In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scoped` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
 Valid values for the `:scoped` keyword are:
 
@@ -180,7 +180,7 @@ With the permissions above, a query like the following would only be allowed by 
 }
 ```
 
-Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [is_role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
+Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
 
 ### Object Scope Authorization
 
@@ -224,7 +224,8 @@ To define custom rules for the scoping, use [has_user_access?/4](https://hexdocs
 ```elixir
 defmodule Authorization do
   use Rajska,
-    roles: [:user, :admin]
+    valid_roles: [:user, :admin],
+    super_role: :admin
 
   @impl true
   def has_user_access?(%{role: :admin}, User, _id, _rule), do: true
@@ -239,7 +240,8 @@ For example, to not raise any authorization errors and just return `nil`:
 ```elixir
 defmodule Authorization do
   use Rajska,
-    roles: [:user, :admin]
+    valid_roles: [:user, :admin],
+    super_role: :admin
 
   @impl true
   def has_user_access?(_user, _, nil), do: true
@@ -252,7 +254,7 @@ end
 
 ### Field Authorization
 
-Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [is_field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:is_field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
 
 Usage:
 
