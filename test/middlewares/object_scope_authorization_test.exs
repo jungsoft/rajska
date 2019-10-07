@@ -80,6 +80,13 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         end
       end
 
+      field :object_not_scoped_query, :user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ ->
+          {:ok, %{id: args.id, name: "bob", not_scoped: %{name: "name"}}}
+        end
+      end
+
       field :users_query, list_of(:user) do
         resolve fn _args, _ ->
           {:ok, [
@@ -251,7 +258,9 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Raises when no meta scope is defined for an object" do
-    assert {:ok, %{errors: errors}} = run_pipeline(not_scoped_query(), context(:user, 2))
+    assert_raise RuntimeError, ~r/No meta scope defined for object :not_scoped/, fn ->
+      assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
   end
 
   defp all_query(id) do
@@ -265,10 +274,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
   end
 
-  defp not_scoped_query do
+  defp object_not_scoped_query(id) do
     """
     {
-      allQuery(userId: 1) {
+      objectNotScopedQuery(id: #{id}) {
         notScoped {
           name
         }
