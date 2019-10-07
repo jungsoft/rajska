@@ -37,7 +37,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     def middleware(middleware, _field, _object), do: middleware
 
     query do
-      field :all_query, :user do
+      field :all_query, non_null(:user) do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
@@ -105,6 +105,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
       field :company, :company
       field :companies, list_of(:company)
+      field :not_scoped, :not_scoped
     end
 
     object :company do
@@ -120,6 +121,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       meta :scope, {Wallet, :user_id}
 
       field :total, :integer
+    end
+
+    object :not_scoped do
+      field :name, :string
     end
   end
 
@@ -245,12 +250,28 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Raises when no meta scope is defined for an object" do
+    assert {:ok, %{errors: errors}} = run_pipeline(not_scoped_query(), context(:user, 2))
+  end
+
   defp all_query(id) do
     """
     {
       allQuery(userId: #{id}) {
         name
         email
+      }
+    }
+    """
+  end
+
+  defp not_scoped_query do
+    """
+    {
+      allQuery(userId: 1) {
+        notScoped {
+          name
+        }
       }
     }
     """
