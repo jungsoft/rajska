@@ -39,7 +39,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
     def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
-    when identifier in [:query, :mutation, :subscription] do
+    when identifier in [:query, :mutation] do
       Rajska.add_query_authorization(middleware, field, Authorization)
     end
 
