@@ -90,11 +90,13 @@ defmodule Rajska do
 
       def not_scoped_roles, do: [:all, unquote(super_role)]
 
-      def super_role?(unquote(super_role)), do: true
+      defguard is_super_role(role) when role === unquote(super_role)
+
+      def super_role?(role) when is_super_role(role), do: true
       def super_role?(_user_role), do: false
 
       def role_authorized?(_user_role, :all), do: true
-      def role_authorized?(unquote(super_role), _allowed_role), do: true
+      def role_authorized?(role, _allowed_role) when is_super_role(role), do: true
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
