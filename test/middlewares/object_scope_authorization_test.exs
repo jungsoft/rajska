@@ -16,17 +16,17 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       valid_roles: [:user, :admin],
       super_role: :admin
 
-    def has_user_access?(%{role: :admin}, User, _id, _field, :default), do: true
-    def has_user_access?(%{id: user_id}, User, id, :id, :default) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id, _field, :default), do: false
+    def has_user_access?(%{role: :admin}, User, _field, :default), do: true
+    def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field, :default), do: false
 
-    def has_user_access?(%{role: :admin}, Company, _id, _field, :default), do: true
-    def has_user_access?(%{id: user_id}, Company, company_user_id, :id, :default) when user_id === company_user_id, do: true
-    def has_user_access?(_current_user, Company, _id, _field, :default), do: false
+    def has_user_access?(%{role: :admin}, Company, _field, :default), do: true
+    def has_user_access?(%{id: user_id}, Company, {:user_id, company_user_id}, :default) when user_id === company_user_id, do: true
+    def has_user_access?(_current_user, Company, _field, :default), do: false
 
-    def has_user_access?(%{role: :admin}, Wallet, _id, _field, :default), do: true
-    def has_user_access?(%{id: user_id}, Wallet, id, :id, :default) when user_id === id, do: true
-    def has_user_access?(_current_user, Wallet, _id,  _field, :default), do: false
+    def has_user_access?(%{role: :admin}, Wallet, _field, :default), do: true
+    def has_user_access?(%{id: user_id}, Wallet, {:user_id, id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, Wallet, _field, :default), do: false
   end
 
   defmodule Schema do

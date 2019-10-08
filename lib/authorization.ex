@@ -22,8 +22,7 @@ defmodule Rajska.Authorization do
   @callback has_user_access?(
     current_user,
     scope :: module(),
-    field_value :: any(),
-    field :: any(),
+    {field :: any(), field_value :: any()},
     rule :: any()
   ) :: boolean()
 
@@ -34,6 +33,6 @@ defmodule Rajska.Authorization do
                       not_scoped_roles: 0,
                       role_authorized?: 2,
                       field_authorized?: 3,
-                      has_user_access?: 5,
+                      has_user_access?: 4,
                       unauthorized_msg: 1
 end
