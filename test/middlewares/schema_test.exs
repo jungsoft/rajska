@@ -30,10 +30,10 @@ defmodule Rajska.SchemaTest do
     end
   end
 
-  test "Raises in compile time if no scoped key is specified for a scoped role" do
+  test "Raises in compile time if no scope key is specified for a scope role" do
     assert_raise(
       RuntimeError,
-      ~r/Query permitter is configured incorrectly, :scoped key must be present for role user/,
+      ~r/Query get_user is configured incorrectly, :scope option must be present for role user/,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -58,10 +58,10 @@ defmodule Rajska.SchemaTest do
     )
   end
 
-  test "Raises in runtime if no scoped key is specified for a scoped role" do
+  test "Raises in runtime if no scope key is specified for a scope role" do
     assert_raise(
       RuntimeError,
-      ~r/Error in query getUser: no scoped argument found in middleware Scope Authorization/,
+      ~r/Error in query getUser: no scope argument found in middleware Scope Authorization/,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -82,7 +82,7 @@ defmodule Rajska.SchemaTest do
   end
 
   test "Raises if no permit key is specified for a query" do
-    assert_raise RuntimeError, ~r/Query permitter is configured incorrectly, :permit key must be present/, fn ->
+    assert_raise RuntimeError, ~r/Query get_user is configured incorrectly, permit option must be present/, fn ->
       defmodule Schema do
         use Absinthe.Schema
 

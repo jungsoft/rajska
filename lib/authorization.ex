@@ -21,7 +21,7 @@ defmodule Rajska.Authorization do
 
   @callback has_user_access?(
     current_user,
-    scoped_struct :: module(),
+    scope :: module(),
     field_value :: any(),
     field :: any(),
     rule :: any()

@@ -22,10 +22,10 @@ defmodule Rajska.Schema do
   ) :: [Middleware.spec(), ...]
   def add_query_authorization(
     [{{QueryAuthorization, :call}, config} = query_authorization | middleware] = _middleware,
-    _field,
+    %Field{name: query_name},
     authorization
   ) do
-    validate_query_auth_config!(config, authorization)
+    validate_query_auth_config!(config, authorization, query_name)
 
     [query_authorization | middleware]
   end
@@ -53,43 +53,59 @@ defmodule Rajska.Schema do
   @spec validate_query_auth_config!(
     [
       permit: atom(),
-      scoped: false | :source | {:source | module(), atom()}
+      scope: false | :source | module(),
+      args: %{} | [] | atom(),
+      optional: false | true,
+      rule: atom()
     ],
-    module()
+    module(),
+    String.t()
   ) :: :ok | Exception.t()
 
-  def validate_query_auth_config!([permit: _, scoped: _, rule: _] = config, authorization) do
-    config
-    |> Keyword.delete(:rule)
-    |> validate_query_auth_config!(authorization)
-  end
+  def validate_query_auth_config!(config, authorization, query_name) do
+    permit = Keyword.get(config, :permit)
+    scope = Keyword.get(config, :scope)
+    args = Keyword.get(config, :args, :id)
+    rule = Keyword.get(config, :rule, :default_rule)
+    optional = Keyword.get(config, :optional, false)
 
-  def validate_query_auth_config!([permit: _, scoped: false] = _config, _authorization), do: :ok
+    try do
+      validate_presence!(permit, :permit)
+      validate_boolean!(optional, :optional)
+      validate_atom!(rule, :rule)
 
-  def validate_query_auth_config!([permit: _, scoped: :source], _authorization), do: :ok
-
-  def validate_query_auth_config!([permit: _, scoped: {:source, _scoped_field}], _authorization), do: :ok
-
-  def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field}], _authorization) do
-    scoped_struct.__schema__(:source)
-  end
-
-  def validate_query_auth_config!([permit: _, scoped: {scoped_struct, _scoped_field, _opts}], _authorization) do
-    scoped_struct.__schema__(:source)
-  end
-
-  def validate_query_auth_config!([permit: _, scoped: scoped_struct], _authorization) do
-    scoped_struct.__schema__(:source)
-  end
-
-  def validate_query_auth_config!([permit: role], authorization) do
-    case Enum.member?(authorization.not_scoped_roles(), role) do
-      true -> :ok
-      false -> raise "Query permitter is configured incorrectly, :scoped key must be present for role #{role}."
+      validate_scope!(scope, permit, authorization)
+      validate_args!(args)
+    rescue
+      e in RuntimeError -> reraise "Query #{query_name} is configured incorrectly, #{e.message}", __STACKTRACE__
     end
   end
 
-  def validate_query_auth_config!(_config, _authorization) do
-    raise "Query permitter is configured incorrectly, :permit key must be present."
+  defp validate_presence!(nil, option), do: raise "#{option} option must be present."
+  defp validate_presence!(_value, _option), do: :ok
+
+  defp validate_boolean!(value, _option) when is_boolean(value), do: :ok
+  defp validate_boolean!(_value, option), do: raise "#{option} option must be a boolean."
+
+  defp validate_atom!(value, _option) when is_atom(value), do: :ok
+  defp validate_atom!(_value, option), do: raise "#{option} option must be an atom."
+
+  defp validate_scope!(nil, role, authorization) do
+    unless Enum.member?(authorization.not_scoped_roles(), role),
+      do: raise ":scope option must be present for role #{role}."
   end
+
+  defp validate_scope!(false, _role, _authorization), do: :ok
+
+  defp validate_scope!(:source,  _role, _authorization), do: :ok
+
+  defp validate_scope!(scope, _role, _authorization) when is_atom(scope) do
+    unless scope.__schema__(:source),
+      do: raise ":scope option #{scope} doesn't implement a __schema__(:source) function."
+  end
+
+  defp validate_args!(args) when is_map(args), do: :ok
+  defp validate_args!(args) when is_list(args), do: :ok
+  defp validate_args!(args) when is_atom(args), do: :ok
+  defp validate_args!(args), do: raise "the following args option is invalid: #{args}"
 end

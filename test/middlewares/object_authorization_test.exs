@@ -34,7 +34,7 @@ defmodule Rajska.ObjectAuthorizationTest do
       end
 
       field :user_query, :user do
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: false]
         resolve fn _, _ ->
           {:ok, %{
             name: "bob",

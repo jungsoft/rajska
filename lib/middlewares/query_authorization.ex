@@ -19,7 +19,7 @@ defmodule Rajska.QueryAuthorization do
       arg :id, non_null(:integer)
       arg :params, non_null(:user_params)
 
-      middleware Rajska.QueryAuthorization, [permit: :user, scoped: User] # same as {User, :id}
+      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as {User, :id}
       resolve &AccountsResolver.update_user/2
     end
 
@@ -40,7 +40,7 @@ defmodule Rajska.QueryAuthorization do
 
   @behaviour Absinthe.Middleware
 
-  def call(%{context: context} = resolution, [{:permit, permission} | _scoped] = config) do
+  def call(%{context: context} = resolution, [{:permit, permission} | _scope] = config) do
     validate_permission!(context, permission)
 
     context

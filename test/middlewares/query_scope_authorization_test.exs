@@ -49,7 +49,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       field :user_scoped_query, :user do
         arg :id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: User]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: User]
         resolve fn _, _ ->
           {:ok, %{
             name: "bob",
@@ -60,28 +60,41 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       field :custom_arg_scoped_query, :user do
         arg :user_id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, :user_id}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: :user_id}
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :custom_nested_arg_scoped_query, :user do
         arg :params, non_null(:user_params)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id]}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: [:params, :id]}
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :custom_nested_optional_arg_scoped_query, :user do
         arg :params, non_null(:user_params)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id], :optional}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: [:params, :id]},
+          optional: true
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :not_scoped_query, :user do
         arg :id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
@@ -89,7 +102,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
         arg :id, :integer
         arg :params, :bank_account_params
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: BankAccount, rule: :edit]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: BankAccount, rule: :edit]
         resolve fn _, _ -> {:ok, %{total: 100}} end
       end
     end
