@@ -105,6 +105,118 @@ defmodule Rajska.SchemaTest do
     end
   end
 
+  test "Raises if scope module doesn't implement a __schema__(:source) function" do
+    assert_raise(
+      RuntimeError,
+      ~r/Query get_user is configured incorrectly, :scope option invalid_module doesn't implement a __schema__/,
+      fn ->
+        defmodule Schema do
+          use Absinthe.Schema
+
+          def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+          def middleware(middleware, field, %{identifier: identifier})
+          when identifier in [:query, :mutation] do
+            Rajska.add_query_authorization(middleware, field, Authorization)
+          end
+
+          def middleware(middleware, _field, _object), do: middleware
+
+          query do
+            field :get_user, :string do
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: :invalid_module]
+              resolve fn _args, _info -> {:ok, "bob"} end
+            end
+          end
+        end
+      end
+    )
+  end
+
+  test "Raises if args option is invalid" do
+    assert_raise(
+      RuntimeError,
+      ~r/Query get_user is configured incorrectly, the following args option is invalid: args/,
+      fn ->
+        defmodule Schema do
+          use Absinthe.Schema
+
+          def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+          def middleware(middleware, field, %{identifier: identifier})
+          when identifier in [:query, :mutation] do
+            Rajska.add_query_authorization(middleware, field, Authorization)
+          end
+
+          def middleware(middleware, _field, _object), do: middleware
+
+          query do
+            field :get_user, :string do
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, args: "args"]
+              resolve fn _args, _info -> {:ok, "bob"} end
+            end
+          end
+        end
+      end
+    )
+  end
+
+  test "Raises if optional option is not a boolean" do
+    assert_raise(
+      RuntimeError,
+      ~r/Query get_user is configured incorrectly, optional option must be a boolean./,
+      fn ->
+        defmodule Schema do
+          use Absinthe.Schema
+
+          def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+          def middleware(middleware, field, %{identifier: identifier})
+          when identifier in [:query, :mutation] do
+            Rajska.add_query_authorization(middleware, field, Authorization)
+          end
+
+          def middleware(middleware, _field, _object), do: middleware
+
+          query do
+            field :get_user, :string do
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, optional: :invalid]
+              resolve fn _args, _info -> {:ok, "bob"} end
+            end
+          end
+        end
+      end
+    )
+  end
+
+  test "Raises if rule option is not an atom" do
+    assert_raise(
+      RuntimeError,
+      ~r/Query get_user is configured incorrectly, rule option must be an atom./,
+      fn ->
+        defmodule Schema do
+          use Absinthe.Schema
+
+          def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+          def middleware(middleware, field, %{identifier: identifier})
+          when identifier in [:query, :mutation] do
+            Rajska.add_query_authorization(middleware, field, Authorization)
+          end
+
+          def middleware(middleware, _field, _object), do: middleware
+
+          query do
+            field :get_user, :string do
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, rule: 4]
+              resolve fn _args, _info -> {:ok, "bob"} end
+            end
+          end
+        end
+      end
+    )
+  end
+
   test "Raises if no authorization module is found in absinthe's context" do
     assert_raise RuntimeError, ~r/Rajska authorization module not found in Absinthe's context/, fn ->
       defmodule Schema do

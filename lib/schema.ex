@@ -100,8 +100,9 @@ defmodule Rajska.Schema do
   defp validate_scope!(:source,  _role, _authorization), do: :ok
 
   defp validate_scope!(scope, _role, _authorization) when is_atom(scope) do
-    unless scope.__schema__(:source),
-      do: raise ":scope option #{scope} doesn't implement a __schema__(:source) function."
+    scope.__schema__(:source)
+  rescue
+    UndefinedFunctionError -> reraise ":scope option #{scope} doesn't implement a __schema__(:source) function.", __STACKTRACE__
   end
 
   defp validate_args!(args) when is_map(args), do: :ok
