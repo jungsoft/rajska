@@ -247,7 +247,7 @@ defmodule Authorization do
     super_role: :admin
 
   @impl true
-  def has_user_access?(_user, _, _, nil), do: true
+  def has_user_access?(_user, _scope, {_field, nil}, _rule), do: true
 
   def has_user_access?(%{role: :admin}, User, _field, _rule), do: true
   def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
