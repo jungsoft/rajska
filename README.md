@@ -104,7 +104,7 @@ Usage:
       arg :id, non_null(:integer)
       arg :params, non_null(:user_params)
 
-      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as {User, :id}
+      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
       resolve &AccountsResolver.update_user/2
     end
 
@@ -132,9 +132,9 @@ Valid values for the `:scope` keyword are:
 
 Valid values for the `:args` keyword are:
 
-- `:id`: where `:id` is the query argument that will also be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
-- `%{id: [:params, :id]}`: where `id` is the query argument as above, but it's not defined directly as an `arg` for the query. Instead, it's nested inside the `params` argument.
-- `[:code, :user_group_id]`: where `user_group_id` (it could also be a nested argument) is an optional argument for the query. If it's present, the scoping will be applied, otherwise no scoping is applied.
+- `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
+- `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
+- `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
 
 ### Object Authorization
 
