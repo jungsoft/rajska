@@ -103,9 +103,12 @@ defmodule Rajska do
       def field_authorized?(nil, _scope_by, _source), do: false
       def field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scoped_struct, field_value, unquote(default_rule)) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, scope, {field, field_value}, unquote(default_rule)) do
         super_user? = current_user |> get_user_role() |> super_role?()
-        owner? = (user_struct === scoped_struct) && (user_id === field_value)
+        owner? =
+          (user_struct === scope)
+          && (field === :id)
+          && (user_id === field_value)
 
         super_user? || owner?
       end
@@ -132,10 +135,10 @@ defmodule Rajska do
         |> field_authorized?(scope_by, source)
       end
 
-      def has_context_access?(context, scoped_struct, field_value, rule) do
+      def has_context_access?(context, scope, {scope_field, field_value}, rule) do
         context
         |> get_current_user()
-        |> has_user_access?(scoped_struct, field_value, rule)
+        |> has_user_access?(scope, {scope_field, field_value}, rule)
       end
 
       defoverridable Authorization

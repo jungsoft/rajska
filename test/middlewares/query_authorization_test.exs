@@ -26,12 +26,12 @@ defmodule Rajska.QueryAuthorizationTest do
       end
 
       field :user_query, :user do
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :user_viewer_query, :user do
-        middleware Rajska.QueryAuthorization, [permit: [:viewer, :user], scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: [:viewer, :user], scope: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 

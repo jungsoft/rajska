@@ -25,12 +25,12 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       valid_roles: [:user, :admin],
       super_role: :admin
 
-    def has_user_access?(%{role: :admin}, User, _id, :default), do: true
-    def has_user_access?(%{id: user_id}, User, id, :default) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _id, :default), do: false
+    def has_user_access?(%{role: :admin}, User, _field, :default), do: true
+    def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field, :default), do: false
 
-    def has_user_access?(_current_user, BankAccount, _id, :edit), do: false
-    def has_user_access?(_current_user, BankAccount, _id, :read_only), do: true
+    def has_user_access?(_current_user, BankAccount, _field, :edit), do: false
+    def has_user_access?(_current_user, BankAccount, _field, :read_only), do: true
   end
 
   defmodule Schema do
@@ -49,7 +49,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       field :user_scoped_query, :user do
         arg :id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: User]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: User]
         resolve fn _, _ ->
           {:ok, %{
             name: "bob",
@@ -60,28 +60,41 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       field :custom_arg_scoped_query, :user do
         arg :user_id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, :user_id}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: :user_id}
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :custom_nested_arg_scoped_query, :user do
         arg :params, non_null(:user_params)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id]}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: [:params, :id]}
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :custom_nested_optional_arg_scoped_query, :user do
         arg :params, non_null(:user_params)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: {User, [:params, :id], :optional}]
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: [:params, :id]},
+          optional: true
+        ]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
       field :not_scoped_query, :user do
         arg :id, non_null(:integer)
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: false]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: false]
         resolve fn _, _ -> {:ok, %{name: "bob"}} end
       end
 
@@ -89,7 +102,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
         arg :id, :integer
         arg :params, :bank_account_params
 
-        middleware Rajska.QueryAuthorization, [permit: :user, scoped: BankAccount, rule: :edit]
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: BankAccount, rule: :edit]
         resolve fn _, _ -> {:ok, %{total: 100}} end
       end
     end
@@ -192,7 +205,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     user = %{role: :user, id: 1}
     custom_nested_arg_scoped_query = custom_nested_arg_scoped_query(nil)
 
-    assert_raise RuntimeError, "Error in query customNestedArgScopedQuery: no argument found in middleware Scope Authorization", fn ->
+    assert_raise RuntimeError, "Error in query customNestedArgScopedQuery: no argument [:params, :id] found in %{params: %{id: nil}}", fn ->
       Absinthe.run(custom_nested_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
     end
   end

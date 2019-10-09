@@ -46,9 +46,9 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, _struct, _field_value, _rule), do: true
-    def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field_value, _rule), do: false
+    def has_user_access?(%{role: :admin}, _struct, {_field, _field_value}, _rule), do: true
+    def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, User, {_field, _field_value}, _rule), do: false
   end
   ```
 
@@ -61,11 +61,11 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(_user, _, nil, _), do: true
+    def has_user_access?(_user, _scope, {_field, nil}, _rule), do: true
 
-    def has_user_access?(%{role: :admin}, User, _field_value, _rule), do: true
-    def has_user_access?(%{id: user_id}, User, id, _rule) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field_value, _rule), do: false
+    def has_user_access?(%{role: :admin}, User, {_field, _field_value}, _rule), do: true
+    def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, User, {_field, _field_value}, _rule), do: false
   end
   ```
 
@@ -77,8 +77,8 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{id: user_id}, Wallet, _field_value, :read_only), do: true
-    def has_user_access?(%{id: user_id}, Wallet, _field_value, :default), do: false
+    def has_user_access?(%{id: user_id}, Wallet, {_field, _field_value}, :read_only), do: true
+    def has_user_access?(%{id: user_id}, Wallet, {_field, _field_value}, :default), do: false
   end
   ```
 
@@ -145,14 +145,14 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   defp authorized?(false, _values, _context, _, _object), do: true
 
-  defp authorized?({scoped_struct, field}, values, context, rule, _object) do
-    scoped_field_value = Map.get(values, field)
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value, rule])
+  defp authorized?({scope, scope_field}, values, context, rule, _object) do
+    field_value = Map.get(values, scope_field)
+
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_field, field_value}, rule])
   end
 
-  defp authorized?(scoped_struct, values, context, rule, _object) do
-    scoped_field_value = Map.get(values, :id)
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scoped_struct, scoped_field_value, rule])
+  defp authorized?(scope, values, context, rule, object) do
+    authorized?({scope, :id}, values, context, rule, object)
   end
 
   defp error(%{source_location: location, schema_node: %{type: type}}) do
