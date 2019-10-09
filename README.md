@@ -1,7 +1,5 @@
 # Rajska
 
-[![Coverage Status](https://coveralls.io/repos/github/rschef/rajska/badge.svg?branch=master)](https://coveralls.io/github/rschef/rajska?branch=master)
-
 Rajska is an elixir authorization library for [Absinthe](https://github.com/absinthe-graphql/absinthe).
 
 It provides the following middlewares:
@@ -21,7 +19,7 @@ The package can be installed by adding `rajska` to your list of dependencies in 
 ```elixir
 def deps do
   [
-    {:rajska, "~> 0.5.0"},
+    {:rajska, "~> 0.6.0"},
   ]
 end
 ```
