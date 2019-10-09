@@ -40,18 +40,20 @@ defmodule Rajska.QueryScopeAuthorization do
   ```
 
   In the above example, `:all` and `:admin` permissions don't require the `:scope` keyword, as defined in the `c:Rajska.Authorization.not_scoped_roles/0` function, but you can modify this behavior by overriding it.
-  The `rule` keyword is not mandatory and will be pattern matched in `c:Rajska.Authorization.has_user_access?/4`. This way different rules can be set to the same struct.
-  See `Rajska.Authorization` for `rule` default settings.
 
-  Valid values for the `:scope` keyword are:
-  - `false`: disables scoping
-  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+  ## Options
 
-  Valid values for the `:args` keyword are:
+  All the following options are sent to `c:Rajska.Authorization.has_user_access?/4`:
 
-  - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
-  - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to `c:Rajska.Authorization.has_user_access?/4`
-  - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
+    * `:scope`
+      - `false`: disables scoping
+      - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+    * `:args`
+      - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
+      - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to `c:Rajska.Authorization.has_user_access?/4`
+      - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
+    * `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
+    * `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
   """
 
   @behaviour Absinthe.Middleware

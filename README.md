@@ -125,16 +125,19 @@ Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
-Valid values for the `:scope` keyword are:
+## Options
 
-- `false`: disables scoping
-- `User`: a module that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4). It must implement a [Authorization behaviour](https://hexdocs.pm/rajska/Rajska.Authorization.html) and a `__schema__(:source)` function (used to check if the module is valid in [validate_query_auth_config!/2](https://hexdocs.pm/rajska/Rajska.Schema.html#validate_query_auth_config!/2))
+All the following options are sent to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4):
 
-Valid values for the `:args` keyword are:
-
-- `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
-- `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
-- `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
+* `:scope`
+  - `false`: disables scoping
+  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+* `:args`
+  - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
+  - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
+  - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
+* `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
+* `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
 
 ### Object Authorization
 
