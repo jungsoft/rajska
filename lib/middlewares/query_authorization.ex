@@ -19,7 +19,7 @@ defmodule Rajska.QueryAuthorization do
       arg :id, non_null(:integer)
       arg :params, non_null(:user_params)
 
-      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as {User, :id}
+      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
       resolve &AccountsResolver.update_user/2
     end
 
