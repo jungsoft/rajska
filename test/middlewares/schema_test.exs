@@ -33,7 +33,7 @@ defmodule Rajska.SchemaTest do
   test "Raises in compile time if no scope key is specified for a scope role" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, :scope option must be present for role user/,
+      ~r/Query get_user is configured incorrectly, :scope option must be present for role :user/,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -82,7 +82,7 @@ defmodule Rajska.SchemaTest do
   end
 
   test "Raises if no permit key is specified for a query" do
-    assert_raise RuntimeError, ~r/Query get_user is configured incorrectly, permit option must be present/, fn ->
+    assert_raise RuntimeError, ~r/Query get_user is configured incorrectly, :permit option must be present/, fn ->
       defmodule Schema do
         use Absinthe.Schema
 
@@ -108,7 +108,7 @@ defmodule Rajska.SchemaTest do
   test "Raises if scope module doesn't implement a __schema__(:source) function" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, :scope option invalid_module doesn't implement a __schema__/,
+      ~r/Query get_user is configured incorrectly, :scope option :invalid_module doesn't implement a __schema__/,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -136,7 +136,7 @@ defmodule Rajska.SchemaTest do
   test "Raises if args option is invalid" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, the following args option is invalid: args/,
+      ~r/Query get_user is configured incorrectly, the following args option is invalid: "args"/,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -164,7 +164,7 @@ defmodule Rajska.SchemaTest do
   test "Raises if optional option is not a boolean" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, optional option must be a boolean./,
+      ~r/Query get_user is configured incorrectly, :optional option must be a boolean./,
       fn ->
         defmodule Schema do
           use Absinthe.Schema
@@ -192,7 +192,7 @@ defmodule Rajska.SchemaTest do
   test "Raises if rule option is not an atom" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, rule option must be an atom./,
+      ~r/Query get_user is configured incorrectly, :rule option must be an atom./,
       fn ->
         defmodule Schema do
           use Absinthe.Schema

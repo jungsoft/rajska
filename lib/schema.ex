@@ -81,18 +81,18 @@ defmodule Rajska.Schema do
     end
   end
 
-  defp validate_presence!(nil, option), do: raise "#{option} option must be present."
+  defp validate_presence!(nil, option), do: raise "#{inspect(option)} option must be present."
   defp validate_presence!(_value, _option), do: :ok
 
   defp validate_boolean!(value, _option) when is_boolean(value), do: :ok
-  defp validate_boolean!(_value, option), do: raise "#{option} option must be a boolean."
+  defp validate_boolean!(_value, option), do: raise "#{inspect(option)} option must be a boolean."
 
   defp validate_atom!(value, _option) when is_atom(value), do: :ok
-  defp validate_atom!(_value, option), do: raise "#{option} option must be an atom."
+  defp validate_atom!(_value, option), do: raise "#{inspect(option)} option must be an atom."
 
   defp validate_scope!(nil, role, authorization) do
     unless Enum.member?(authorization.not_scoped_roles(), role),
-      do: raise ":scope option must be present for role #{role}."
+      do: raise ":scope option must be present for role #{inspect(role)}."
   end
 
   defp validate_scope!(false, _role, _authorization), do: :ok
@@ -102,11 +102,27 @@ defmodule Rajska.Schema do
   defp validate_scope!(scope, _role, _authorization) when is_atom(scope) do
     scope.__schema__(:source)
   rescue
-    UndefinedFunctionError -> reraise ":scope option #{scope} doesn't implement a __schema__(:source) function.", __STACKTRACE__
+    UndefinedFunctionError -> reraise ":scope option #{inspect(scope)} doesn't implement a __schema__(:source) function.", __STACKTRACE__
   end
 
-  defp validate_args!(args) when is_map(args), do: :ok
-  defp validate_args!(args) when is_list(args), do: :ok
+  defp validate_args!(args) when is_map(args) do
+    Enum.each(args, fn
+      {field, value} when is_atom(field) and is_atom(value) -> :ok
+      {field, values} when is_atom(field) and is_list(values)  -> validate_list_of_atoms!(values)
+      field_value -> raise "the following args option is invalid: #{inspect(field_value)}. Since the provided args is a map, you should provide an atom key and an atom or list of atoms value."
+    end)
+  end
+
+  defp validate_args!(args) when is_list(args), do: validate_list_of_atoms!(args)
+
   defp validate_args!(args) when is_atom(args), do: :ok
-  defp validate_args!(args), do: raise "the following args option is invalid: #{args}"
+
+  defp validate_args!(args), do: raise "the following args option is invalid: #{inspect(args)}"
+
+  defp validate_list_of_atoms!(args) do
+    Enum.each(args, fn
+      arg when is_atom(arg) -> :ok
+      arg -> raise "the following args option is invalid: #{inspect(args)}. Expected a list of atoms, but found #{inspect(arg)}"
+    end)
+  end
 end
