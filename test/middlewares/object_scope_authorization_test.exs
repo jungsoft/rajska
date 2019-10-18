@@ -1,14 +1,45 @@
 defmodule Rajska.ObjectScopeAuthorizationTest do
   use ExUnit.Case, async: true
 
+  defmodule Wallet do
+    defstruct [
+      id: 1,
+      total: 10,
+    ]
+
+    def __schema__(:source), do: "wallets"
+  end
+
+  defmodule Company do
+    defstruct [
+      id: 1,
+      name: "User",
+      user_id: 1,
+      wallet: %Wallet{}
+    ]
+
+    def __schema__(:source), do: "companies"
+  end
+
   defmodule User do
     defstruct [
       id: 1,
       name: "User",
-      email: "email@user.com"
+      email: "email@user.com",
+      company: nil,
+      companies: [],
+      not_scoped: nil,
     ]
 
     def __schema__(:source), do: "users"
+  end
+
+  defmodule NotScoped do
+    defstruct [
+      id: 1,
+    ]
+
+    def __schema__(:source), do: "not_scopeds"
   end
 
   defmodule Authorization do
@@ -41,14 +72,14 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob",
-            company: %{
+            company: %Company{
               id: 5,
               user_id: args.user_id,
               name: "company",
-              wallet: %{id: 1, total: 10}
+              wallet: %Wallet{id: 1, total: 10}
             }
           }}
         end
@@ -58,7 +89,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob"
           }}
@@ -69,12 +100,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob",
             companies: [
-              %{id: 1, user_id: args.user_id, wallet: %{id: 2, total: 10}},
-              %{id: 2, user_id: args.user_id, wallet: %{id: 1, total: 10}},
+              %Company{id: 1, user_id: args.user_id, wallet: %Wallet{id: 2, total: 10}},
+              %Company{id: 2, user_id: args.user_id, wallet: %Wallet{id: 1, total: 10}},
             ]
           }}
         end
@@ -83,15 +114,22 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :object_not_scoped_query, :user do
         arg :id, non_null(:integer)
         resolve fn args, _ ->
-          {:ok, %{id: args.id, name: "bob", not_scoped: %{name: "name"}}}
+          {:ok, %User{id: args.id, name: "bob", not_scoped: %NotScoped{id: 1}}}
+        end
+      end
+
+      field :object_not_struct_query, :user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ ->
+          {:ok, %{id: args.id, name: "bob"}}
         end
       end
 
       field :users_query, list_of(:user) do
         resolve fn _args, _ ->
           {:ok, [
-            %{id: 1, name: "bob"},
-            %{id: 2, name: "bob"},
+            %User{id: 1, name: "bob"},
+            %User{id: 2, name: "bob"},
           ]}
         end
       end
@@ -104,7 +142,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :user do
-      meta :scope, User
+      meta :scope_by, :id
 
       field :id, :integer
       field :email, :string
@@ -116,7 +154,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :company do
-      meta :scope, {Company, :user_id}
+      meta :scope_by, :user_id
 
       field :id, :integer
       field :user_id, :integer
@@ -125,7 +163,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :wallet do
-      meta :scope, {Wallet, :user_id}
+      meta :scope_by, :user_id
 
       field :total, :integer
     end
@@ -257,9 +295,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
-  test "Raises when no meta scope is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope defined for object :not_scoped/, fn ->
+  test "Raises when no meta scope_by is defined for an object" do
+    assert_raise RuntimeError, ~r/No meta scope_by defined for object :not_scoped/, fn ->
       assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
+  end
+
+  test "Raises when returned object is not a struct" do
+    assert_raise RuntimeError, ~r/Expected a Struct for object :user, got %{id: 2, name: \"bob\"}/, fn ->
+      assert {:ok, _result} = run_pipeline(object_not_struct_query(2), context(:user, 2))
     end
   end
 
@@ -370,6 +414,17 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
     {
       nilUserQuery {
+        name
+        email
+      }
+    }
+    """
+  end
+
+  defp object_not_struct_query(id) do
+    """
+    {
+      objectNotStructQuery(id: #{id}) {
         name
         email
       }

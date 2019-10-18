@@ -111,17 +111,23 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   # Object
-  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter} = result, context) do
+  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter, root_value: %scope{} = root_value} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
-    scope = Type.meta(type, :scope)
+    scope_by = Type.meta(type, :scope_by)
 
     default_rule = Rajska.apply_auth_mod(context, :default_rule)
     rule = Type.meta(type, :rule) || default_rule
 
-    case authorized?(scope, result.root_value, context, rule, type) do
+    case authorized?(scope, scope_by, root_value, context, rule, type) do
       true -> %{result | fields: walk_result(fields, context)}
       false -> Map.put(result, :errors, [error(emitter)])
     end
+  end
+
+  # Invalid object
+  defp result(%{emitter: %{schema_node: schema_node}, root_value: root_value}, _context) do
+    type = Introspection.get_object_type(schema_node.type)
+    raise "Expected a Struct for object #{inspect(type.identifier)}, got #{inspect(root_value)}"
   end
 
   # List
@@ -141,18 +147,14 @@ defmodule Rajska.ObjectScopeAuthorization do
     walk_result(fields, context, new_fields)
   end
 
-  defp authorized?(nil, _values, _context, _, object), do: raise "No meta scope defined for object #{inspect object.identifier}"
+  defp authorized?(_scope, nil, _values, _context, _, object), do: raise "No meta scope_by defined for object #{inspect object.identifier}"
 
-  defp authorized?(false, _values, _context, _, _object), do: true
+  defp authorized?(_scope, false, _values, _context, _, _object), do: true
 
-  defp authorized?({scope, scope_field}, values, context, rule, _object) do
+  defp authorized?(scope, scope_field, values, context, rule, _object) do
     field_value = Map.get(values, scope_field)
 
     Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_field, field_value}, rule])
-  end
-
-  defp authorized?(scope, values, context, rule, object) do
-    authorized?({scope, :id}, values, context, rule, object)
   end
 
   defp error(%{source_location: location, schema_node: %{type: type}}) do
