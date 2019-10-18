@@ -42,6 +42,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     def has_user_access?(%{role: :admin}, User, _field, :default), do: true
     def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
     def has_user_access?(_current_user, User, _field, :default), do: false
+    def has_user_access?(_crreutn_user, User, _field, :object), do: false
 
     def has_user_access?(%{role: :admin}, Company, _field, :default), do: true
     def has_user_access?(%{id: user_id}, Company, {:user_id, company_user_id}, :default) when user_id === company_user_id, do: true
@@ -131,6 +132,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           {:ok, nil}
         end
       end
+
+      field :user_query_with_rule, :user_rule do
+        resolve fn _args, _ ->
+          {:ok, %User{id: 1}}
+        end
+      end
     end
 
     object :user do
@@ -162,6 +169,13 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
     object :not_scoped do
       field :name, :string
+    end
+
+    object :user_rule do
+      meta :scope_by, :id
+      meta :rule, :object
+
+      field :id, :integer
     end
   end
 
@@ -285,6 +299,16 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     {:ok, result} = run_pipeline(users_query(), context(:admin, 2))
     assert %{data: %{"usersQuery" => [_ | _]}} = result
     refute Map.has_key?(result, :errors)
+  end
+
+  test "accepts a meta rule" do
+    assert {:ok, %{errors: errors}} = run_pipeline(user_query_with_rule(), context(:admin, 1))
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object user_rule",
+      }
+    ] == errors
   end
 
   test "Raises when no meta scope_by is defined for an object" do
@@ -419,6 +443,16 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       objectNotStructQuery(id: #{id}) {
         name
         email
+      }
+    }
+    """
+  end
+
+  defp user_query_with_rule do
+    """
+    {
+      userQueryWithRule {
+        id
       }
     }
     """
