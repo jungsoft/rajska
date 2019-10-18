@@ -7,6 +7,16 @@ defmodule Rajska.SchemaTest do
       super_role: :admin
   end
 
+  defmodule User do
+    defstruct [
+      id: 1,
+      name: "User",
+      email: "email@user.com"
+    ]
+
+    def __schema__(:source), do: "users"
+  end
+
   test "Raises if no permission is specified for a query" do
     assert_raise RuntimeError, ~r/No permission specified for query get_user/, fn ->
       defmodule Schema do
@@ -152,7 +162,7 @@ defmodule Rajska.SchemaTest do
 
           query do
             field :get_user, :string do
-              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, args: "args"]
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: User, args: "args"]
               resolve fn _args, _info -> {:ok, "bob"} end
             end
           end
@@ -180,7 +190,7 @@ defmodule Rajska.SchemaTest do
 
           query do
             field :get_user, :string do
-              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, optional: :invalid]
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: User, optional: :invalid]
               resolve fn _args, _info -> {:ok, "bob"} end
             end
           end
@@ -208,7 +218,7 @@ defmodule Rajska.SchemaTest do
 
           query do
             field :get_user, :string do
-              middleware Rajska.QueryAuthorization, [permit: :user, scope: :source, rule: 4]
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: User, rule: 4]
               resolve fn _args, _info -> {:ok, "bob"} end
             end
           end

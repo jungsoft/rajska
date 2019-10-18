@@ -53,7 +53,7 @@ defmodule Rajska.Schema do
   @spec validate_query_auth_config!(
     [
       permit: atom(),
-      scope: false | :source | module(),
+      scope: false | module(),
       args: %{} | [] | atom(),
       optional: false | true,
       rule: atom()
@@ -96,8 +96,6 @@ defmodule Rajska.Schema do
   end
 
   defp validate_scope!(false, _role, _authorization), do: :ok
-
-  defp validate_scope!(:source,  _role, _authorization), do: :ok
 
   defp validate_scope!(scope, _role, _authorization) when is_atom(scope) do
     scope.__schema__(:source)

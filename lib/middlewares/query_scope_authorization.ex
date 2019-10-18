@@ -96,8 +96,6 @@ defmodule Rajska.QueryScopeAuthorization do
     raise "Error in query #{name}: no scope argument found in middleware Scope Authorization"
   end
 
-  defp get_arguments_source!(%Resolution{source: source}, :source), do: source
-
   defp get_arguments_source!(%Resolution{arguments: args}, _scope), do: args
 
   def apply_scope_authorization(
