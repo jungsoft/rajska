@@ -1,14 +1,37 @@
 defmodule Rajska.ObjectScopeAuthorizationTest do
   use ExUnit.Case, async: true
 
+  defmodule Wallet do
+    defstruct [
+      id: 1,
+      total: 10,
+    ]
+  end
+
+  defmodule Company do
+    defstruct [
+      id: 1,
+      name: "User",
+      user_id: 1,
+      wallet: %Wallet{}
+    ]
+  end
+
   defmodule User do
     defstruct [
       id: 1,
       name: "User",
-      email: "email@user.com"
+      email: "email@user.com",
+      company: nil,
+      companies: [],
+      not_scoped: nil,
     ]
+  end
 
-    def __schema__(:source), do: "users"
+  defmodule NotScoped do
+    defstruct [
+      id: 1,
+    ]
   end
 
   defmodule Authorization do
@@ -19,6 +42,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     def has_user_access?(%{role: :admin}, User, _field, :default), do: true
     def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
     def has_user_access?(_current_user, User, _field, :default), do: false
+    def has_user_access?(_current_user, User, _field, :object), do: false
 
     def has_user_access?(%{role: :admin}, Company, _field, :default), do: true
     def has_user_access?(%{id: user_id}, Company, {:user_id, company_user_id}, :default) when user_id === company_user_id, do: true
@@ -41,14 +65,14 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob",
-            company: %{
+            company: %Company{
               id: 5,
               user_id: args.user_id,
               name: "company",
-              wallet: %{id: 1, total: 10}
+              wallet: %Wallet{id: 1, total: 10}
             }
           }}
         end
@@ -58,7 +82,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob"
           }}
@@ -69,12 +93,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         arg :user_id, non_null(:integer)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.user_id,
             name: "bob",
             companies: [
-              %{id: 1, user_id: args.user_id, wallet: %{id: 2, total: 10}},
-              %{id: 2, user_id: args.user_id, wallet: %{id: 1, total: 10}},
+              %Company{id: 1, user_id: args.user_id, wallet: %Wallet{id: 2, total: 10}},
+              %Company{id: 2, user_id: args.user_id, wallet: %Wallet{id: 1, total: 10}},
             ]
           }}
         end
@@ -83,15 +107,22 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :object_not_scoped_query, :user do
         arg :id, non_null(:integer)
         resolve fn args, _ ->
-          {:ok, %{id: args.id, name: "bob", not_scoped: %{name: "name"}}}
+          {:ok, %User{id: args.id, name: "bob", not_scoped: %NotScoped{id: 1}}}
+        end
+      end
+
+      field :object_not_struct_query, :user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ ->
+          {:ok, %{id: args.id, name: "bob"}}
         end
       end
 
       field :users_query, list_of(:user) do
         resolve fn _args, _ ->
           {:ok, [
-            %{id: 1, name: "bob"},
-            %{id: 2, name: "bob"},
+            %User{id: 1, name: "bob"},
+            %User{id: 2, name: "bob"},
           ]}
         end
       end
@@ -101,10 +132,22 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           {:ok, nil}
         end
       end
+
+      field :user_query_with_rule, :user_rule do
+        resolve fn _args, _ ->
+          {:ok, %User{id: 1}}
+        end
+      end
+
+      field :string_query, :string do
+        resolve fn _args, _ ->
+          {:ok, "STRING"}
+        end
+      end
     end
 
     object :user do
-      meta :scope, User
+      meta :scope_by, :id
 
       field :id, :integer
       field :email, :string
@@ -116,7 +159,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :company do
-      meta :scope, {Company, :user_id}
+      meta :scope_by, :user_id
 
       field :id, :integer
       field :user_id, :integer
@@ -125,13 +168,20 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :wallet do
-      meta :scope, {Wallet, :user_id}
+      meta :scope_by, :user_id
 
       field :total, :integer
     end
 
     object :not_scoped do
       field :name, :string
+    end
+
+    object :user_rule do
+      meta :scope_by, :id
+      meta :rule, :object
+
+      field :id, :integer
     end
   end
 
@@ -257,9 +307,31 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
-  test "Raises when no meta scope is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope defined for object :not_scoped/, fn ->
+  test "accepts a meta rule" do
+    assert {:ok, %{errors: errors}} = run_pipeline(user_query_with_rule(), context(:admin, 1))
+    assert [
+      %{
+        locations: [%{column: 0, line: 2}],
+        message: "Not authorized to access object user_rule",
+      }
+    ] == errors
+  end
+
+  test "ignores object when is a primitive" do
+    assert {:ok, result} = run_pipeline(string_query(), context(:user, 1))
+    assert %{data: %{"stringQuery" => "STRING"}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "Raises when no meta scope_by is defined for an object" do
+    assert_raise RuntimeError, ~r/No meta scope_by defined for object :not_scoped/, fn ->
       assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
+  end
+
+  test "Raises when returned object is not a struct" do
+    assert_raise RuntimeError, ~r/Expected a Struct for object :user, got %{id: 2, name: \"bob\"}/, fn ->
+      assert {:ok, _result} = run_pipeline(object_not_struct_query(2), context(:user, 2))
     end
   end
 
@@ -373,6 +445,35 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         name
         email
       }
+    }
+    """
+  end
+
+  defp object_not_struct_query(id) do
+    """
+    {
+      objectNotStructQuery(id: #{id}) {
+        name
+        email
+      }
+    }
+    """
+  end
+
+  defp user_query_with_rule do
+    """
+    {
+      userQueryWithRule {
+        id
+      }
+    }
+    """
+  end
+
+  defp string_query do
+    """
+    {
+      stringQuery
     }
     """
   end

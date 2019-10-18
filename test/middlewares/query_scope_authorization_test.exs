@@ -7,8 +7,6 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       name: "User",
       email: "email@user.com"
     ]
-
-    def __schema__(:source), do: "users"
   end
 
   defmodule BankAccount do
@@ -16,8 +14,6 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       id: 1,
       total: 5,
     ]
-
-    def __schema__(:source), do: "bank_account"
   end
 
   defmodule Authorization do
