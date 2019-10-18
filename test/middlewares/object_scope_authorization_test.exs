@@ -138,6 +138,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           {:ok, %User{id: 1}}
         end
       end
+
+      field :string_query, :string do
+        resolve fn _args, _ ->
+          {:ok, "STRING"}
+        end
+      end
     end
 
     object :user do
@@ -311,6 +317,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
+  test "ignores object when is a primitive" do
+    assert {:ok, result} = run_pipeline(string_query(), context(:user, 1))
+    assert %{data: %{"stringQuery" => "STRING"}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   test "Raises when no meta scope_by is defined for an object" do
     assert_raise RuntimeError, ~r/No meta scope_by defined for object :not_scoped/, fn ->
       assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
@@ -454,6 +466,14 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       userQueryWithRule {
         id
       }
+    }
+    """
+  end
+
+  defp string_query do
+    """
+    {
+      stringQuery
     }
     """
   end
