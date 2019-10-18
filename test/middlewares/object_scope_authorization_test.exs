@@ -42,7 +42,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     def has_user_access?(%{role: :admin}, User, _field, :default), do: true
     def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
     def has_user_access?(_current_user, User, _field, :default), do: false
-    def has_user_access?(_crreutn_user, User, _field, :object), do: false
+    def has_user_access?(_current_user, User, _field, :object), do: false
 
     def has_user_access?(%{role: :admin}, Company, _field, :default), do: true
     def has_user_access?(%{id: user_id}, Company, {:user_id, company_user_id}, :default) when user_id === company_user_id, do: true
