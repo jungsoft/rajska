@@ -131,7 +131,7 @@ All the following options are sent to [has_user_access?/4](https://hexdocs.pm/ra
 
 * `:scope`
   - `false`: disables scoping
-  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must implement a `Rajska.Authorization` behaviour and a `__schema__(:source)` function (used to check if the module is valid in `Rajska.Schema.validate_query_auth_config!/2`)
+  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must define a struct.
 * `:args`
   - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
   - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)

@@ -6,8 +6,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       id: 1,
       total: 10,
     ]
-
-    def __schema__(:source), do: "wallets"
   end
 
   defmodule Company do
@@ -17,8 +15,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       user_id: 1,
       wallet: %Wallet{}
     ]
-
-    def __schema__(:source), do: "companies"
   end
 
   defmodule User do
@@ -30,16 +26,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       companies: [],
       not_scoped: nil,
     ]
-
-    def __schema__(:source), do: "users"
   end
 
   defmodule NotScoped do
     defstruct [
       id: 1,
     ]
-
-    def __schema__(:source), do: "not_scopeds"
   end
 
   defmodule Authorization do

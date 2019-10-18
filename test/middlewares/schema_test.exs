@@ -13,8 +13,10 @@ defmodule Rajska.SchemaTest do
       name: "User",
       email: "email@user.com"
     ]
+  end
 
-    def __schema__(:source), do: "users"
+  defmodule NotStruct do
+    def hello, do: :world
   end
 
   test "Raises if no permission is specified for a query" do
@@ -115,10 +117,10 @@ defmodule Rajska.SchemaTest do
     end
   end
 
-  test "Raises if scope module doesn't implement a __schema__(:source) function" do
+  test "Raises if scope module is not a struct" do
     assert_raise(
       RuntimeError,
-      ~r/Query get_user is configured incorrectly, :scope option :invalid_module doesn't implement a __schema__/,
+      ~r/Query get_user is configured incorrectly, :scope option Rajska.SchemaTest.NotStruct is not a struct/,
       fn ->
         defmodule SchemaNoStruct do
           use Absinthe.Schema
@@ -134,7 +136,7 @@ defmodule Rajska.SchemaTest do
 
           query do
             field :get_user, :string do
-              middleware Rajska.QueryAuthorization, [permit: :user, scope: :invalid_module]
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: NotStruct]
               resolve fn _args, _info -> {:ok, "bob"} end
             end
           end
