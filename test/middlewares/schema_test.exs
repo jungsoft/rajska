@@ -19,7 +19,7 @@ defmodule Rajska.SchemaTest do
 
   test "Raises if no permission is specified for a query" do
     assert_raise RuntimeError, ~r/No permission specified for query get_user/, fn ->
-      defmodule Schema do
+      defmodule SchemaNoPermission do
         use Absinthe.Schema
 
         def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -45,7 +45,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Query get_user is configured incorrectly, :scope option must be present for role :user/,
       fn ->
-        defmodule Schema do
+        defmodule SchemaNoScope do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -73,7 +73,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Error in query getUser: no scope argument found in middleware Scope Authorization/,
       fn ->
-        defmodule Schema do
+        defmodule SchemaNoScopeRuntime do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -86,14 +86,14 @@ defmodule Rajska.SchemaTest do
           end
         end
 
-        {:ok, _result} = Absinthe.run("{ getUser }", Schema, context: %{current_user: %{role: :user}})
+        {:ok, _result} = Absinthe.run("{ getUser }", SchemaNoScopeRuntime, context: %{current_user: %{role: :user}})
       end
     )
   end
 
   test "Raises if no permit key is specified for a query" do
     assert_raise RuntimeError, ~r/Query get_user is configured incorrectly, :permit option must be present/, fn ->
-      defmodule Schema do
+      defmodule SchemaNoPermit do
         use Absinthe.Schema
 
         def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -120,7 +120,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Query get_user is configured incorrectly, :scope option :invalid_module doesn't implement a __schema__/,
       fn ->
-        defmodule Schema do
+        defmodule SchemaNoStruct do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -148,7 +148,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Query get_user is configured incorrectly, the following args option is invalid: "args"/,
       fn ->
-        defmodule Schema do
+        defmodule SchemaInvalidArgs do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -176,7 +176,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Query get_user is configured incorrectly, :optional option must be a boolean./,
       fn ->
-        defmodule Schema do
+        defmodule SchemaInvalidOptional do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
@@ -204,7 +204,7 @@ defmodule Rajska.SchemaTest do
       RuntimeError,
       ~r/Query get_user is configured incorrectly, :rule option must be an atom./,
       fn ->
-        defmodule Schema do
+        defmodule SchemaInvalidRule do
           use Absinthe.Schema
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
