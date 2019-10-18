@@ -10,7 +10,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   ```elixir
   object :user do
-    meta :scope, User # Same as meta :scope, {User, :id}
+    meta :scope_by, :id
     meta :rule, :default
 
     field :id, :integer
@@ -21,7 +21,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   object :company do
-    meta :scope, {Company, :user_id}
+    meta :scope_by, :user_id
     meta :rule, :default
 
     field :id, :integer
@@ -31,9 +31,10 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   object :wallet do
-    meta :scope, Wallet
+    meta :scope_by, :id
     meta :rule, :read_only
 
+    field :id, :integer
     field :total, :integer
   end
   ```

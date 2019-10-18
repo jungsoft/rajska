@@ -21,7 +21,7 @@ The package can be installed by adding `rajska` to your list of dependencies in 
 ```elixir
 def deps do
   [
-    {:rajska, "~> 0.6.0"},
+    {:rajska, "~> 0.7.0"},
   ]
 end
 ```
