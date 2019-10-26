@@ -1,10 +1,24 @@
 defmodule Rajska.FieldAuthorizationTest do
   use ExUnit.Case, async: true
 
+  defmodule User do
+    defstruct [
+      id: 1,
+      name: "User",
+      email: "email@user.com",
+      phone: "123456",
+      is_email_public: true,
+    ]
+  end
+
   defmodule Authorization do
     use Rajska,
       valid_roles: [:user, :admin],
       super_role: :admin
+
+    def has_user_access?(%{role: :admin}, User, _field, :default), do: true
+    def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, User, _field, :default), do: false
   end
 
   defmodule Schema do
@@ -25,7 +39,7 @@ defmodule Rajska.FieldAuthorizationTest do
         arg :is_email_public, non_null(:boolean)
 
         resolve fn args, _ ->
-          {:ok, %{
+          {:ok, %User{
             id: args.id,
             name: "bob",
             is_email_public: args.is_email_public,

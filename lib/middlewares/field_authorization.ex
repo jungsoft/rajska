@@ -36,7 +36,7 @@ defmodule Rajska.FieldAuthorization do
 
     resolution
     |> Map.get(:context)
-    |> authorized?(field_private?, scope_by, resolution.source)
+    |> authorized?(field_private?, scope_by, resolution)
     |> put_result(resolution, field)
   end
 
@@ -55,11 +55,14 @@ defmodule Rajska.FieldAuthorization do
 
   defp authorized?(_context, false, _scope_by, _source), do: true
 
-  defp authorized?(context, true, scope_by, source) do
-    case Rajska.apply_auth_mod(context, :super_user?, [context]) do
-      true -> true
-      false -> Rajska.apply_auth_mod(context, :context_field_authorized?, [context, scope_by, source])
-    end
+  defp authorized?(context, true, scope_by, %{source: %scope{} = source}) do
+    field_value = Map.get(source, scope_by)
+
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_by, field_value}, :default])
+  end
+
+  defp authorized?(_context, true, _scope_by, %{source: source, definition: definition}) do
+    raise "Expected a Struct for source object in field #{inspect(definition.name)}, got #{inspect(source)}"
   end
 
   defp put_result(true, resolution, _field), do: resolution

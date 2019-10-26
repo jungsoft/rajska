@@ -100,9 +100,6 @@ defmodule Rajska do
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
-      def field_authorized?(nil, _scope_by, _source), do: false
-      def field_authorized?(%{id: user_id}, scope_by, source), do: user_id === Map.get(source, scope_by)
-
       def has_user_access?(%user_struct{id: user_id} = current_user, scope, {field, field_value}, unquote(default_rule)) do
         super_user? = current_user |> get_user_role() |> super_role?()
         owner? =
@@ -127,12 +124,6 @@ defmodule Rajska do
         |> get_current_user()
         |> get_user_role()
         |> role_authorized?(allowed_role)
-      end
-
-      def context_field_authorized?(context, scope_by, source) do
-        context
-        |> get_current_user()
-        |> field_authorized?(scope_by, source)
       end
 
       def has_context_access?(context, scope, {scope_field, field_value}, rule) do
