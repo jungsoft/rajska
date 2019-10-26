@@ -35,7 +35,7 @@ defmodule Rajska.FieldAuthorization do
     scope_by = get_scope_by_field!(object, field_private?)
 
     default_rule = Rajska.apply_auth_mod(resolution.context, :default_rule)
-    rule = fields[field] |> Type.meta(:rule) || default_rule
+    rule = Type.meta(fields[field], :rule) || default_rule
 
     resolution
     |> Map.get(:context)
