@@ -50,6 +50,25 @@ defmodule Rajska.FieldAuthorizationTest do
             always_private: "private!",
           }} end
       end
+
+      field :get_field_scope_user, :field_scope_user do
+        arg :id, non_null(:integer)
+
+        resolve fn args, _ ->
+          {:ok, %User{
+            id: args.id,
+            name: "bob",
+            phone: "123456",
+          }} end
+      end
+
+      field :get_not_scoped, :not_scoped do
+        resolve fn _args, _ -> {:ok, %{phone: "123456"}} end
+      end
+
+      field :get_both_scopes, :both_scopes do
+        resolve fn _args, _ -> {:ok, %{phone: "123456"}} end
+      end
     end
 
     object :user do
@@ -61,6 +80,24 @@ defmodule Rajska.FieldAuthorizationTest do
       field :phone, :string, meta: [private: true]
       field :email, :string, meta: [private: & !&1.is_email_public]
       field :always_private, :string, meta: [private: true, rule: :private]
+    end
+
+    object :field_scope_user do
+      meta :scope_field_by, :id
+
+      field :name, :string
+      field :phone, :string, meta: [private: true]
+    end
+
+    object :not_scoped do
+      field :phone, :string, meta: [private: true]
+    end
+
+    object :both_scopes do
+      meta :scope_by, :id
+      meta :scope_field_by, :id
+
+      field :phone, :string, meta: [private: true]
     end
   end
 
@@ -124,6 +161,34 @@ defmodule Rajska.FieldAuthorizationTest do
     assert is_binary(data["phone"])
   end
 
+  test "Works when defining scope_field_by" do
+    user = %{role: :user, id: 1}
+    get_user_query = get_field_scope_user(2)
+
+    {:ok, %{
+      errors: errors,
+      data: %{"getFieldScopeUser" => data}
+    }} = Absinthe.run(get_user_query, __MODULE__.Schema, context: %{current_user: user})
+
+    error_messages = Enum.map(errors, & &1.message)
+    assert Enum.member?(error_messages, "Not authorized to access field phone")
+
+    assert is_binary(data["name"])
+    assert data["phone"] === nil
+  end
+
+  test "Raises when no meta scope_by or scope_field_by is defined for an object" do
+    assert_raise RuntimeError, ~r/No meta scope_by or scope_field_by defined for object not_scoped/, fn ->
+      Absinthe.run("{ getNotScoped { phone } }", __MODULE__.Schema, context(:user, 2))
+    end
+  end
+
+  test "Raises when both scope metas are defined for an object" do
+    assert_raise RuntimeError, ~r/Error in both_scopes: scope_by should only be defined alone. If scope_field_by is defined, then scope_by must not be defined/, fn ->
+      Absinthe.run("{ getBothScopes { phone } }", __MODULE__.Schema, context(:user, 2))
+    end
+  end
+
   defp get_user_query(id, is_email_public) do
     """
     {
@@ -132,6 +197,17 @@ defmodule Rajska.FieldAuthorizationTest do
         email
         phone
         isEmailPublic
+      }
+    }
+    """
+  end
+
+  defp get_field_scope_user(id) do
+    """
+    {
+      getFieldScopeUser(id: #{id}) {
+        name
+        phone
       }
     }
     """
@@ -146,4 +222,6 @@ defmodule Rajska.FieldAuthorizationTest do
     }
     """
   end
+
+  defp context(role, id), do: [context: %{current_user: %{role: role, id: id}}]
 end

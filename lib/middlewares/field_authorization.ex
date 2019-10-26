@@ -50,9 +50,14 @@ defmodule Rajska.FieldAuthorization do
   defp get_scope_by_field!(_object, false), do: :ok
 
   defp get_scope_by_field!(object, _private) do
-    case Type.meta(object, :scope_by) do
-      nil -> raise "No scope_by meta defined for object returned from query #{object.identifier}"
-      scope_by_field when is_atom(scope_by_field) -> scope_by_field
+    general_scope_by = Type.meta(object, :scope_by)
+    field_scope_by = Type.meta(object, :scope_field_by)
+
+    case {general_scope_by, field_scope_by} do
+      {nil, nil} -> raise "No meta scope_by or scope_field_by defined for object #{object.identifier}"
+      {nil, field_scope_by} -> field_scope_by
+      {general_scope_by, nil} -> general_scope_by
+      {_, _} -> raise "Error in #{object.identifier}: scope_by should only be defined alone. If scope_field_by is defined, then scope_by must not be defined"
     end
   end
 
