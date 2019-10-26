@@ -102,10 +102,9 @@ defmodule Rajska.FieldAuthorizationTest do
   end
 
   test "User can access own fields" do
-    user = %{role: :user, id: 1}
     get_user_query = get_user_query(1, false)
 
-    {:ok, result} = Absinthe.run(get_user_query, __MODULE__.Schema, context: %{current_user: user})
+    {:ok, result} = Absinthe.run(get_user_query, __MODULE__.Schema, context(:user, 1))
 
     assert %{data: %{"getUser" => data}} = result
     refute Map.has_key?(result, :errors)
@@ -116,12 +115,10 @@ defmodule Rajska.FieldAuthorizationTest do
   end
 
   test "Custom rules are applied" do
-    user = %{role: :user, id: 1}
-
     {:ok, %{
       errors: errors,
       data: %{"getUser" => data}
-    }} = Absinthe.run(get_user_private_query(1), __MODULE__.Schema, context: %{current_user: user})
+    }} = Absinthe.run(get_user_private_query(1), __MODULE__.Schema, context(:user, 1))
 
     error_messages = Enum.map(errors, & &1.message)
     assert Enum.member?(error_messages, "Not authorized to access field always_private")
@@ -130,13 +127,12 @@ defmodule Rajska.FieldAuthorizationTest do
   end
 
   test "User cannot access other user private fields" do
-    user = %{role: :user, id: 1}
     get_user_query = get_user_query(2, false)
 
     {:ok, %{
       errors: errors,
       data: %{"getUser" => data}
-    }} = Absinthe.run(get_user_query, __MODULE__.Schema, context: %{current_user: user})
+    }} = Absinthe.run(get_user_query, __MODULE__.Schema, context(:user, 1))
 
     error_messages = Enum.map(errors, & &1.message)
     assert Enum.member?(error_messages, "Not authorized to access field phone")
@@ -148,10 +144,8 @@ defmodule Rajska.FieldAuthorizationTest do
   end
 
   test "Admin can access all fields" do
-    user = %{role: :admin, id: 3}
     get_user_query = get_user_query(2, false)
-
-    {:ok, result} = Absinthe.run(get_user_query, __MODULE__.Schema, context: %{current_user: user})
+    {:ok, result} = Absinthe.run(get_user_query, __MODULE__.Schema, context(:admin, 3))
 
     assert %{data: %{"getUser" => data}} = result
     refute Map.has_key?(result, :errors)
