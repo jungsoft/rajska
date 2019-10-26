@@ -371,7 +371,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Raises when both scope metas are defined for an object" do
-    assert_raise RuntimeError, ~r/Error in :both_scopes: scope_by should only be defined alone. If scope_object_by is defined, then scope_by must not be defined/, fn ->
+    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_object_by is defined, then scope_by must not be defined/, fn ->
       run_pipeline("{ getBothScopes { name } }", context(:user, 2))
     end
   end

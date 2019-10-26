@@ -156,7 +156,7 @@ defmodule Rajska.ObjectScopeAuthorization do
       {nil, nil} -> raise "No meta scope_by or scope_object_by defined for object #{inspect object.identifier}"
       {nil, object_scope_by} -> object_scope_by
       {general_scope_by, nil} -> general_scope_by
-      {_, _} -> raise "Error in #{inspect object.identifier}: scope_by should only be defined alone. If scope_object_by is defined, then scope_by must not be defined"
+      {_, _} -> raise "Error in #{inspect object.identifier}. If scope_object_by is defined, then scope_by must not be defined"
     end
   end
 

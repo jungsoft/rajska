@@ -178,7 +178,7 @@ defmodule Rajska.FieldAuthorizationTest do
   end
 
   test "Raises when both scope metas are defined for an object" do
-    assert_raise RuntimeError, ~r/Error in :both_scopes: scope_by should only be defined alone. If scope_field_by is defined, then scope_by must not be defined/, fn ->
+    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_field_by is defined, then scope_by must not be defined/, fn ->
       Absinthe.run("{ getBothScopes { phone } }", __MODULE__.Schema, context(:user, 2))
     end
   end
