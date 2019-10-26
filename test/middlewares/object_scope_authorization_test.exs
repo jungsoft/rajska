@@ -148,6 +148,11 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       field :get_both_scopes, :both_scopes do
         resolve fn _args, _ -> {:ok, %User{}} end
       end
+
+      field :get_object_scope_user, :object_scope_user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ -> {:ok, %User{id: args.id}} end
+      end
     end
 
     object :user do
@@ -194,6 +199,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
       field :name, :string
     end
+
+    object :object_scope_user do
+      meta :scope_object_by, :id
+
+      field :id, :integer
+    end
   end
 
   test "Only user with same ID and admin has access to scoped user" do
@@ -228,6 +239,25 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
+      }
+    ] == errors
+  end
+
+  test "Works when defining scope_object_by instead of scope_by" do
+    query = "{ getObjectScopeUser(id: 1) { id } }"
+    {:ok, result} = run_pipeline(query, context(:user, 1))
+    assert %{data: %{"getObjectScopeUser" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+
+    {:ok, result} = run_pipeline(query, context(:admin, 2))
+    assert %{data: %{"getObjectScopeUser" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+
+    assert {:ok, %{errors: errors}} = run_pipeline(query, context(:user, 2))
+    assert [
+      %{
+        locations: [%{column: 0, line: 1}],
+        message: "Not authorized to access object object_scope_user",
       }
     ] == errors
   end
