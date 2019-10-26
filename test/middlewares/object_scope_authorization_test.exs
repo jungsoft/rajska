@@ -144,6 +144,10 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           {:ok, "STRING"}
         end
       end
+
+      field :get_both_scopes, :both_scopes do
+        resolve fn _args, _ -> {:ok, %User{}} end
+      end
     end
 
     object :user do
@@ -182,6 +186,13 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       meta :rule, :object
 
       field :id, :integer
+    end
+
+    object :both_scopes do
+      meta :scope_by, :id
+      meta :scope_object_by, :id
+
+      field :name, :string
     end
   end
 
@@ -324,8 +335,14 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Raises when no meta scope_by is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope_by defined for object :not_scoped/, fn ->
+    assert_raise RuntimeError, ~r/No meta scope_by or scope_object_by defined for object :not_scoped/, fn ->
       assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
+  end
+
+  test "Raises when both scope metas are defined for an object" do
+    assert_raise RuntimeError, ~r/Error in :both_scopes: scope_by should only be defined alone. If scope_object_by is defined, then scope_by must not be defined/, fn ->
+      assert {:ok, _result} = run_pipeline("{ getBothScopes { name } }", context(:user, 2))
     end
   end
 

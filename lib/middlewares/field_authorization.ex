@@ -54,10 +54,10 @@ defmodule Rajska.FieldAuthorization do
     field_scope_by = Type.meta(object, :scope_field_by)
 
     case {general_scope_by, field_scope_by} do
-      {nil, nil} -> raise "No meta scope_by or scope_field_by defined for object #{object.identifier}"
+      {nil, nil} -> raise "No meta scope_by or scope_field_by defined for object #{inspect object.identifier}"
       {nil, field_scope_by} -> field_scope_by
       {general_scope_by, nil} -> general_scope_by
-      {_, _} -> raise "Error in #{object.identifier}: scope_by should only be defined alone. If scope_field_by is defined, then scope_by must not be defined"
+      {_, _} -> raise "Error in #{inspect object.identifier}: scope_by should only be defined alone. If scope_field_by is defined, then scope_by must not be defined"
     end
   end
 
