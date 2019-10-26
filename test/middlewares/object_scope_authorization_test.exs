@@ -336,19 +336,19 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
   test "Raises when no meta scope_by is defined for an object" do
     assert_raise RuntimeError, ~r/No meta scope_by or scope_object_by defined for object :not_scoped/, fn ->
-      assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+      run_pipeline(object_not_scoped_query(2), context(:user, 2))
     end
   end
 
   test "Raises when both scope metas are defined for an object" do
     assert_raise RuntimeError, ~r/Error in :both_scopes: scope_by should only be defined alone. If scope_object_by is defined, then scope_by must not be defined/, fn ->
-      assert {:ok, _result} = run_pipeline("{ getBothScopes { name } }", context(:user, 2))
+      run_pipeline("{ getBothScopes { name } }", context(:user, 2))
     end
   end
 
   test "Raises when returned object is not a struct" do
     assert_raise RuntimeError, ~r/Expected a Struct for object :user, got %{id: 2, name: \"bob\"}/, fn ->
-      assert {:ok, _result} = run_pipeline(object_not_struct_query(2), context(:user, 2))
+      run_pipeline(object_not_struct_query(2), context(:user, 2))
     end
   end
 
