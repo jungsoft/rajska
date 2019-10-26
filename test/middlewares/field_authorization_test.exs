@@ -8,6 +8,7 @@ defmodule Rajska.FieldAuthorizationTest do
       email: "email@user.com",
       phone: "123456",
       is_email_public: true,
+      always_private: "private!"
     ]
   end
 
@@ -16,6 +17,7 @@ defmodule Rajska.FieldAuthorizationTest do
       valid_roles: [:user, :admin],
       super_role: :admin
 
+    def has_user_access?(_current_user, User, _field, :private), do: false
     def has_user_access?(%{role: :admin}, User, _field, :default), do: true
     def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
     def has_user_access?(_current_user, User, _field, :default), do: false
@@ -44,7 +46,8 @@ defmodule Rajska.FieldAuthorizationTest do
             name: "bob",
             is_email_public: args.is_email_public,
             phone: "123456",
-            email: "bob@email.com"
+            email: "bob@email.com",
+            always_private: "private!",
           }} end
       end
     end
@@ -57,6 +60,7 @@ defmodule Rajska.FieldAuthorizationTest do
 
       field :phone, :string, meta: [private: true]
       field :email, :string, meta: [private: & !&1.is_email_public]
+      field :always_private, :string, meta: [private: true, rule: :private]
     end
   end
 
@@ -72,6 +76,20 @@ defmodule Rajska.FieldAuthorizationTest do
     assert is_binary(data["name"])
     assert is_binary(data["email"])
     assert is_binary(data["phone"])
+  end
+
+  test "Custom rules are applied" do
+    user = %{role: :user, id: 1}
+
+    {:ok, %{
+      errors: errors,
+      data: %{"getUser" => data}
+    }} = Absinthe.run(get_user_private_query(1), __MODULE__.Schema, context: %{current_user: user})
+
+    error_messages = Enum.map(errors, & &1.message)
+    assert Enum.member?(error_messages, "Not authorized to access field always_private")
+
+    assert is_nil(data["alwaysPrivate"])
   end
 
   test "User cannot access other user private fields" do
@@ -114,6 +132,16 @@ defmodule Rajska.FieldAuthorizationTest do
         email
         phone
         isEmailPublic
+      }
+    }
+    """
+  end
+
+  defp get_user_private_query(id) do
+    """
+    {
+      getUser(id: #{id}, isEmailPublic: true) {
+        alwaysPrivate
       }
     }
     """
