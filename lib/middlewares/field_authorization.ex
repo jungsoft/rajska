@@ -34,9 +34,12 @@ defmodule Rajska.FieldAuthorization do
     field_private? = fields[field] |> Type.meta(:private) |> field_private?(resolution.source)
     scope_by = get_scope_by_field!(object, field_private?)
 
+    default_rule = Rajska.apply_auth_mod(resolution.context, :default_rule)
+    rule = Type.meta(fields[field], :rule) || default_rule
+
     resolution
     |> Map.get(:context)
-    |> authorized?(field_private?, scope_by, resolution.source)
+    |> authorized?(field_private?, scope_by, resolution, rule)
     |> put_result(resolution, field)
   end
 
@@ -47,19 +50,27 @@ defmodule Rajska.FieldAuthorization do
   defp get_scope_by_field!(_object, false), do: :ok
 
   defp get_scope_by_field!(object, _private) do
-    case Type.meta(object, :scope_by) do
-      nil -> raise "No scope_by meta defined for object returned from query #{object.identifier}"
-      scope_by_field when is_atom(scope_by_field) -> scope_by_field
+    general_scope_by = Type.meta(object, :scope_by)
+    field_scope_by = Type.meta(object, :scope_field_by)
+
+    case {general_scope_by, field_scope_by} do
+      {nil, nil} -> raise "No meta scope_by or scope_field_by defined for object #{inspect object.identifier}"
+      {nil, field_scope_by} -> field_scope_by
+      {general_scope_by, nil} -> general_scope_by
+      {_, _} -> raise "Error in #{inspect object.identifier}. If scope_field_by is defined, then scope_by must not be defined"
     end
   end
 
-  defp authorized?(_context, false, _scope_by, _source), do: true
+  defp authorized?(_context, false, _scope_by, _source, _rule), do: true
 
-  defp authorized?(context, true, scope_by, source) do
-    case Rajska.apply_auth_mod(context, :super_user?, [context]) do
-      true -> true
-      false -> Rajska.apply_auth_mod(context, :context_field_authorized?, [context, scope_by, source])
-    end
+  defp authorized?(context, true, scope_by, %{source: %scope{} = source}, rule) do
+    field_value = Map.get(source, scope_by)
+
+    Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_by, field_value}, rule])
+  end
+
+  defp authorized?(_context, true, _scope_by, %{source: source, definition: definition}, _rule) do
+    raise "Expected a Struct for source object in field #{inspect(definition.name)}, got #{inspect(source)}"
   end
 
   defp put_result(true, resolution, _field), do: resolution

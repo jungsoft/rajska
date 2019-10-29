@@ -114,7 +114,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   # Object
   defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter, root_value: %scope{} = root_value} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
-    scope_by = Type.meta(type, :scope_by)
+    scope_by = get_scope_by!(type)
 
     default_rule = Rajska.apply_auth_mod(context, :default_rule)
     rule = Type.meta(type, :rule) || default_rule
@@ -148,7 +148,17 @@ defmodule Rajska.ObjectScopeAuthorization do
     walk_result(fields, context, new_fields)
   end
 
-  defp authorized?(_scope, nil, _values, _context, _, object), do: raise "No meta scope_by defined for object #{inspect object.identifier}"
+  defp get_scope_by!(object) do
+    general_scope_by = Type.meta(object, :scope_by)
+    object_scope_by = Type.meta(object, :scope_object_by)
+
+    case {general_scope_by, object_scope_by} do
+      {nil, nil} -> raise "No meta scope_by or scope_object_by defined for object #{inspect object.identifier}"
+      {nil, object_scope_by} -> object_scope_by
+      {general_scope_by, nil} -> general_scope_by
+      {_, _} -> raise "Error in #{inspect object.identifier}. If scope_object_by is defined, then scope_by must not be defined"
+    end
+  end
 
   defp authorized?(_scope, false, _values, _context, _, _object), do: true
 

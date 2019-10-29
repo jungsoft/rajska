@@ -144,6 +144,15 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
           {:ok, "STRING"}
         end
       end
+
+      field :get_both_scopes, :both_scopes do
+        resolve fn _args, _ -> {:ok, %User{}} end
+      end
+
+      field :get_object_scope_user, :object_scope_user do
+        arg :id, non_null(:integer)
+        resolve fn args, _ -> {:ok, %User{id: args.id}} end
+      end
     end
 
     object :user do
@@ -183,6 +192,19 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
 
       field :id, :integer
     end
+
+    object :both_scopes do
+      meta :scope_by, :id
+      meta :scope_object_by, :id
+
+      field :name, :string
+    end
+
+    object :object_scope_user do
+      meta :scope_object_by, :id
+
+      field :id, :integer
+    end
   end
 
   test "Only user with same ID and admin has access to scoped user" do
@@ -217,6 +239,25 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       %{
         locations: [%{column: 0, line: 2}],
         message: "Not authorized to access object user",
+      }
+    ] == errors
+  end
+
+  test "Works when defining scope_object_by instead of scope_by" do
+    query = "{ getObjectScopeUser(id: 1) { id } }"
+    {:ok, result} = run_pipeline(query, context(:user, 1))
+    assert %{data: %{"getObjectScopeUser" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+
+    {:ok, result} = run_pipeline(query, context(:admin, 2))
+    assert %{data: %{"getObjectScopeUser" => %{}}} = result
+    refute Map.has_key?(result, :errors)
+
+    assert {:ok, %{errors: errors}} = run_pipeline(query, context(:user, 2))
+    assert [
+      %{
+        locations: [%{column: 0, line: 1}],
+        message: "Not authorized to access object object_scope_user",
       }
     ] == errors
   end
@@ -324,14 +365,20 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
   end
 
   test "Raises when no meta scope_by is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope_by defined for object :not_scoped/, fn ->
-      assert {:ok, _result} = run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    assert_raise RuntimeError, ~r/No meta scope_by or scope_object_by defined for object :not_scoped/, fn ->
+      run_pipeline(object_not_scoped_query(2), context(:user, 2))
+    end
+  end
+
+  test "Raises when both scope metas are defined for an object" do
+    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_object_by is defined, then scope_by must not be defined/, fn ->
+      run_pipeline("{ getBothScopes { name } }", context(:user, 2))
     end
   end
 
   test "Raises when returned object is not a struct" do
     assert_raise RuntimeError, ~r/Expected a Struct for object :user, got %{id: 2, name: \"bob\"}/, fn ->
-      assert {:ok, _result} = run_pipeline(object_not_struct_query(2), context(:user, 2))
+      run_pipeline(object_not_struct_query(2), context(:user, 2))
     end
   end
 
