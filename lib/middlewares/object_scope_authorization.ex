@@ -126,12 +126,6 @@ defmodule Rajska.ObjectScopeAuthorization do
     end
   end
 
-  # Invalid object
-  defp result(%{emitter: %{schema_node: schema_node}, root_value: root_value}, _context) do
-    type = Introspection.get_object_type(schema_node.type)
-    raise "Expected a Struct for object #{inspect(type.identifier)}, got #{inspect(root_value)}"
-  end
-
   # List
   defp result(%{values: values} = result, context) do
     %{result | values: walk_result(values, context)}

@@ -69,6 +69,10 @@ defmodule Rajska.FieldAuthorizationTest do
       field :get_both_scopes, :both_scopes do
         resolve fn _args, _ -> {:ok, %{phone: "123456"}} end
       end
+
+      field :not_struct, :user do
+        resolve fn _args, _ -> {:ok, %{id: 1}} end
+      end
     end
 
     object :user do
@@ -183,6 +187,12 @@ defmodule Rajska.FieldAuthorizationTest do
     end
   end
 
+  test "Raises when source object is not a struct" do
+    assert_raise RuntimeError, ~r/Expected a Struct for source object in field \"phone\", got %{id: 1}/, fn ->
+      Absinthe.run(not_struct_query(), __MODULE__.Schema, context(:user, 2))
+    end
+  end
+
   defp get_user_query(id, is_email_public) do
     """
     {
@@ -212,6 +222,17 @@ defmodule Rajska.FieldAuthorizationTest do
     {
       getUser(id: #{id}, isEmailPublic: true) {
         alwaysPrivate
+      }
+    }
+    """
+  end
+
+  defp not_struct_query do
+    """
+    {
+      notStruct {
+        name
+        phone
       }
     }
     """
