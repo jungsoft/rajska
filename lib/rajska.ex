@@ -16,7 +16,7 @@ defmodule Rajska do
   ```elixir
   def deps do
     [
-      {:rajska, "~> 0.8.0"},
+      {:rajska, "~> 0.8.1"},
     ]
   end
   ```
