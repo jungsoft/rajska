@@ -112,9 +112,10 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   # Object
-  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter, root_value: %scope{} = root_value} = result, context) do
+  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter, root_value: root_value} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
     scope_by = get_scope_by!(type)
+    scope = get_scope!(scope_by, result)
 
     default_rule = Rajska.apply_auth_mod(context, :default_rule)
     rule = Type.meta(type, :rule) || default_rule
@@ -123,12 +124,6 @@ defmodule Rajska.ObjectScopeAuthorization do
       true -> %{result | fields: walk_result(fields, context)}
       false -> Map.put(result, :errors, [error(emitter)])
     end
-  end
-
-  # Invalid object
-  defp result(%{emitter: %{schema_node: schema_node}, root_value: root_value}, _context) do
-    type = Introspection.get_object_type(schema_node.type)
-    raise "Expected a Struct for object #{inspect(type.identifier)}, got #{inspect(root_value)}"
   end
 
   # List
@@ -158,6 +153,13 @@ defmodule Rajska.ObjectScopeAuthorization do
       {general_scope_by, nil} -> general_scope_by
       {_, _} -> raise "Error in #{inspect object.identifier}. If scope_object_by is defined, then scope_by must not be defined"
     end
+  end
+
+  defp get_scope!(false, _result), do: false
+  defp get_scope!(_scope_by, %{root_value: %scope{}}), do: scope
+  defp get_scope!(_scope_by, %{emitter: %{schema_node: schema_node}, root_value: root_value}) do
+    type = Introspection.get_object_type(schema_node.type)
+    raise "Expected a Struct for object #{inspect(type.identifier)}, got #{inspect(root_value)}"
   end
 
   defp authorized?(_scope, false, _values, _context, _, _object), do: true
