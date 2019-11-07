@@ -21,12 +21,12 @@ defmodule Rajska.QueryScopeAuthorizationTest do
       valid_roles: [:user, :admin],
       super_role: :admin
 
-    def has_user_access?(%{role: :admin}, User, _field, :default), do: true
-    def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field, :default), do: false
+    def has_user_access?(%{role: :admin}, %User{}, :default), do: true
+    def has_user_access?(%{id: user_id}, %User{id: id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, %User{}, :default), do: false
 
-    def has_user_access?(_current_user, BankAccount, _field, :edit), do: false
-    def has_user_access?(_current_user, BankAccount, _field, :read_only), do: true
+    def has_user_access?(_current_user, %BankAccount{}, :edit), do: false
+    def has_user_access?(_current_user, %BankAccount{}, :read_only), do: true
   end
 
   defmodule Schema do

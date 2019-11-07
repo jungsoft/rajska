@@ -17,10 +17,10 @@ defmodule Rajska.FieldAuthorizationTest do
       valid_roles: [:user, :admin],
       super_role: :admin
 
-    def has_user_access?(_current_user, User, _field, :private), do: false
-    def has_user_access?(%{role: :admin}, User, _field, :default), do: true
-    def has_user_access?(%{id: user_id}, User, {:id, id}, :default) when user_id === id, do: true
-    def has_user_access?(_current_user, User, _field, :default), do: false
+    def has_user_access?(_current_user, %User{}, :private), do: false
+    def has_user_access?(%{role: :admin}, %User{}, :default), do: true
+    def has_user_access?(%{id: user_id}, %User{id: id}, :default) when user_id === id, do: true
+    def has_user_access?(_current_user, %User{}, :default), do: false
   end
 
   defmodule Schema do

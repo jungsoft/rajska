@@ -39,7 +39,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
   ```
 
-  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/4`. For example:
+  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
 
   ```elixir
   defmodule Authorization do
@@ -47,13 +47,13 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, _struct, {_field, _field_value}, _rule), do: true
-    def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
-    def has_user_access?(_current_user, User, {_field, _field_value}, _rule), do: false
+    def has_user_access?(%{role: :admin}, _, _scoped_struct, _rule), do: true
+    def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, %User{}, _rule), do: false
   end
   ```
 
-  Keep in mind that the `field_value` provided to `has_user_access?/4` can be `nil`. This case can be handled as you wish.
+  Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
   For example, to not raise any authorization errors and just return `nil`:
 
   ```elixir
@@ -62,15 +62,13 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(_user, _scope, {_field, nil}, _rule), do: true
-
-    def has_user_access?(%{role: :admin}, User, {_field, _field_value}, _rule), do: true
-    def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
-    def has_user_access?(_current_user, User, {_field, _field_value}, _rule), do: false
+    def has_user_access?(%User{role: :admin}, _scoped_struct, _rule), do: true
+    def has_user_access?(%User{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
+    def has_user_access?(_current_user, %User{}, _rule), do: false
   end
   ```
 
-  The `rule` keyword is not mandatory and will be pattern matched in `has_user_access?/4`:
+  The `rule` keyword is not mandatory and will be pattern matched in `has_user_access?/3`:
 
   ```elixir
   defmodule Authorization do
@@ -78,8 +76,8 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{id: user_id}, Wallet, {_field, _field_value}, :read_only), do: true
-    def has_user_access?(%{id: user_id}, Wallet, {_field, _field_value}, :default), do: false
+    def has_user_access?(%{id: user_id}, %Wallet{}, :read_only), do: true
+    def has_user_access?(%{id: user_id}, %Wallet{}, :default), do: false
   end
   ```
 

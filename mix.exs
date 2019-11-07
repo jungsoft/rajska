@@ -13,12 +13,14 @@ defmodule Rajska.MixProject do
       description: "Rajska is an authorization library for Absinthe.",
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        "test.all": :test
       ]
     ]
   end
@@ -49,6 +51,15 @@ defmodule Rajska.MixProject do
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false},
       {:absinthe, "~> 1.4.0"},
       {:excoveralls, "~> 0.11", only: :test},
+    ]
+  end
+
+  defp aliases do
+    [
+      "test.all": [
+        "credo --strict",
+        "test"
+      ]
     ]
   end
 end

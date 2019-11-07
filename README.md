@@ -28,7 +28,7 @@ end
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4) and [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) and [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -127,14 +127,14 @@ In the above example, `:all` and `:admin` (`super_role`) permissions don't requi
 
 ## Options
 
-All the following options are sent to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4):
+All the following options are sent to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3):
 
 * `:scope`
   - `false`: disables scoping
-  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must define a struct.
+  - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must define a struct.
 * `:args`
   - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
-  - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4)
+  - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3)
   - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
 * `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
 * `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
@@ -225,7 +225,7 @@ object :wallet do
 end
 ```
 
-To define custom rules for the scoping, use [has_user_access?/4](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/4). For example:
+To define custom rules for the scoping, use [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). For example:
 
 ```elixir
 defmodule Authorization do
@@ -234,13 +234,13 @@ defmodule Authorization do
     super_role: :admin
 
   @impl true
-  def has_user_access?(%{role: :admin}, User, _field, _rule), do: true
-  def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
-  def has_user_access?(_current_user, User, _field, _rule), do: false
+  def has_user_access?(%{role: :admin}, %User{}, _rule), do: true
+  def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
+  def has_user_access?(_current_user, %User{}, _rule), do: false
 end
 ```
 
-Keep in mind that the `field_value` provided to `has_user_access?/4` can be `nil`. This case can be handled as you wish.
+Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
 For example, to not raise any authorization errors and just return `nil`:
 
 ```elixir
@@ -250,11 +250,9 @@ defmodule Authorization do
     super_role: :admin
 
   @impl true
-  def has_user_access?(_user, _scope, {_field, nil}, _rule), do: true
-
-  def has_user_access?(%{role: :admin}, User, _field, _rule), do: true
-  def has_user_access?(%{id: user_id}, User, {:id, id}, _rule) when user_id === id, do: true
-  def has_user_access?(_current_user, User, _field, _rule), do: false
+  def has_user_access?(%{role: :admin}, %User{}, _rule), do: true
+  def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
+  def has_user_access?(_current_user, %User{}, _rule), do: false
 end
 ```
 
