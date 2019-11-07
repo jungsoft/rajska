@@ -85,7 +85,7 @@ defmodule Rajska.QueryScopeAuthorization do
 
     arg_fields
     |> Enum.map(& get_scoped_struct_field(arguments_source, &1, optional, resolution.definition.name))
-    |> Enum.filter(& !!&1)
+    |> Enum.reject(&is_nil/1)
     |> has_user_access?(scope, resolution.context, rule, optional)
     |> update_result(resolution)
   end
