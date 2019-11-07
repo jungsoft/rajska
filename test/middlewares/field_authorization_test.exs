@@ -69,14 +69,10 @@ defmodule Rajska.FieldAuthorizationTest do
       field :get_both_scopes, :both_scopes do
         resolve fn _args, _ -> {:ok, %{phone: "123456"}} end
       end
-
-      field :not_struct, :user do
-        resolve fn _args, _ -> {:ok, %{id: 1}} end
-      end
     end
 
     object :user do
-      meta :scope_by, :id
+      meta :scope?, true
 
       field :name, :string
       field :is_email_public, :boolean
@@ -87,19 +83,21 @@ defmodule Rajska.FieldAuthorizationTest do
     end
 
     object :field_scope_user do
-      meta :scope_field_by, :id
+      meta :scope_field?, true
 
       field :name, :string
       field :phone, :string, meta: [private: true]
     end
 
     object :not_scoped do
+      meta :scope?, false
+
       field :phone, :string, meta: [private: true]
     end
 
     object :both_scopes do
-      meta :scope_by, :id
-      meta :scope_field_by, :id
+      meta :scope?, true
+      meta :scope_field?, false
 
       field :phone, :string, meta: [private: true]
     end
@@ -175,21 +173,16 @@ defmodule Rajska.FieldAuthorizationTest do
     assert data["phone"] === nil
   end
 
-  test "Raises when no meta scope_by or scope_field_by is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope_by or scope_field_by defined for object :not_scoped/, fn ->
-      Absinthe.run("{ getNotScoped { phone } }", __MODULE__.Schema, context(:user, 2))
-    end
+  test "Works when scoping is disabled" do
+    {:ok, result} = Absinthe.run("{ getNotScoped { phone } }", __MODULE__.Schema, context(:user, 2))
+
+    assert %{data: %{"getNotScoped" => data}} = result
+    refute Map.has_key?(result, :errors)
   end
 
   test "Raises when both scope metas are defined for an object" do
-    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_field_by is defined, then scope_by must not be defined/, fn ->
+    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_field\? is defined, then scope\? must not be defined/, fn ->
       Absinthe.run("{ getBothScopes { phone } }", __MODULE__.Schema, context(:user, 2))
-    end
-  end
-
-  test "Raises when source object is not a struct" do
-    assert_raise RuntimeError, ~r/Expected a Struct for source object in field \"phone\", got %{id: 1}/, fn ->
-      Absinthe.run(not_struct_query(), __MODULE__.Schema, context(:user, 2))
     end
   end
 
@@ -222,17 +215,6 @@ defmodule Rajska.FieldAuthorizationTest do
     {
       getUser(id: #{id}, isEmailPublic: true) {
         alwaysPrivate
-      }
-    }
-    """
-  end
-
-  defp not_struct_query do
-    """
-    {
-      notStruct {
-        name
-        phone
       }
     }
     """
