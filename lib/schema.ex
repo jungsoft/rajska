@@ -3,11 +3,8 @@ defmodule Rajska.Schema do
   Concatenates Rajska middlewares with Absinthe middlewares and validates Query Authorization configuration.
   """
 
-  alias Absinthe.Type.{
-    Field,
-    Middleware,
-    Object
-  }
+  alias Absinthe.Middleware
+  alias Absinthe.Type.{Field, Object}
 
   alias Rajska.{
     FieldAuthorization,

@@ -44,7 +44,7 @@ defmodule Rajska.QueryAuthorization do
     validate_permission!(context, permission)
 
     context
-    |> Rajska.apply_auth_mod(:context_authorized?, [context, permission])
+    |> Rajska.apply_auth_mod(:context_role_authorized?, [context, permission])
     |> update_result(resolution)
     |> QueryScopeAuthorization.call(config)
   end
@@ -71,6 +71,6 @@ defmodule Rajska.QueryAuthorization do
   defp update_result(true, resolution), do: resolution
 
   defp update_result(false, %{context: context} = resolution) do
-    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(context, :unauthorized_msg, [resolution])})
+    Resolution.put_result(resolution, {:error, Rajska.apply_auth_mod(context, :unauthorized_message, [resolution])})
   end
 end

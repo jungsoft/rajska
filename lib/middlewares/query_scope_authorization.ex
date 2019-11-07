@@ -43,14 +43,14 @@ defmodule Rajska.QueryScopeAuthorization do
 
   ## Options
 
-  All the following options are sent to `c:Rajska.Authorization.has_user_access?/4`:
+  All the following options are sent to `c:Rajska.Authorization.has_user_access?/3`:
 
     * `:scope`
       - `false`: disables scoping
-      - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/4`. It must define a struct.
+      - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must define a struct.
     * `:args`
       - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
-      - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to `c:Rajska.Authorization.has_user_access?/4`
+      - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to `c:Rajska.Authorization.has_user_access?/3`
       - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
     * `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
     * `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
@@ -84,7 +84,9 @@ defmodule Rajska.QueryScopeAuthorization do
     arguments_source = get_arguments_source!(resolution, scope)
 
     arg_fields
-    |> Enum.all?(& apply_scope_authorization(resolution, scope, arguments_source, &1, rule, optional))
+    |> Enum.map(& get_scoped_struct_field(arguments_source, &1, optional, resolution.definition.name))
+    |> Enum.reject(&is_nil/1)
+    |> has_user_access?(scope, resolution.context, rule, optional)
     |> update_result(resolution)
   end
 
@@ -98,25 +100,23 @@ defmodule Rajska.QueryScopeAuthorization do
 
   defp get_arguments_source!(%Resolution{arguments: args}, _scope), do: args
 
-  def apply_scope_authorization(
-    %Resolution{definition: definition, context: context},
-    scope,
-    arguments_source,
-    {scope_field, arg_field},
-    rule,
-    optional
-  ) do
+  def get_scoped_struct_field(arguments_source, {scope_field, arg_field}, optional, query_name) do
     case get_scope_field_value(arguments_source, arg_field) do
-      nil -> optional || raise "Error in query #{definition.name}: no argument #{inspect arg_field} found in #{inspect arguments_source}"
-      field_value -> has_context_access?(context, scope, {scope_field, field_value}, rule)
+      nil when optional === true -> nil
+      nil when optional === false -> raise "Error in query #{query_name}: no argument #{inspect arg_field} found in #{inspect arguments_source}"
+      field_value -> {scope_field, field_value}
     end
   end
 
   defp get_scope_field_value(arguments_source, fields) when is_list(fields), do: get_in(arguments_source, fields)
   defp get_scope_field_value(arguments_source, field) when is_atom(field), do: Map.get(arguments_source, field)
 
-  defp has_context_access?(context, scope, {scope_field, field_value}, rule) do
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_field, field_value}, rule])
+  defp has_user_access?([], _scope, _context, _rule, true), do: true
+
+  defp has_user_access?(scoped_struct_fields, scope, context, rule, _optional) do
+    scoped_struct = scope.__struct__(scoped_struct_fields)
+
+    Rajska.apply_auth_mod(context, :context_user_authorized?, [context, scoped_struct, rule])
   end
 
   defp update_result(true, resolution), do: resolution

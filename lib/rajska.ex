@@ -16,14 +16,14 @@ defmodule Rajska do
   ```elixir
   def deps do
     [
-      {:rajska, "~> 0.8.1"},
+      {:rajska, "~> 0.9.0"},
     ]
   end
   ```
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/4` and `c:Rajska.Authorization.field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2` and `c:Rajska.Authorization.has_user_access?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do
@@ -100,17 +100,14 @@ defmodule Rajska do
       def role_authorized?(user_role, allowed_role) when is_atom(allowed_role), do: user_role === allowed_role
       def role_authorized?(user_role, allowed_roles) when is_list(allowed_roles), do: user_role in allowed_roles
 
-      def has_user_access?(%user_struct{id: user_id} = current_user, scope, {field, field_value}, unquote(default_rule)) do
+      def has_user_access?(%user_struct{id: user_id} = current_user, %scope{} = struct, unquote(default_rule)) do
         super_user? = current_user |> get_user_role() |> super_role?()
-        owner? =
-          (user_struct === scope)
-          && (field === :id)
-          && (user_id === field_value)
+        owner? = (user_struct === scope) && (user_id === struct.id)
 
         super_user? || owner?
       end
 
-      def unauthorized_msg(_resolution), do: "unauthorized"
+      def unauthorized_message(_resolution), do: "unauthorized"
 
       def super_user?(context) do
         context
@@ -119,17 +116,17 @@ defmodule Rajska do
         |> super_role?()
       end
 
-      def context_authorized?(context, allowed_role) do
+      def context_role_authorized?(context, allowed_role) do
         context
         |> get_current_user()
         |> get_user_role()
         |> role_authorized?(allowed_role)
       end
 
-      def has_context_access?(context, scope, {scope_field, field_value}, rule) do
+      def context_user_authorized?(context, scoped_struct, rule) do
         context
         |> get_current_user()
-        |> has_user_access?(scope, {scope_field, field_value}, rule)
+        |> has_user_access?(scoped_struct, rule)
       end
 
       defoverridable Authorization

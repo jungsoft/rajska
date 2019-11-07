@@ -8,8 +8,11 @@ defmodule Rajska.Authorization do
   @type current_user :: any()
   @type role :: atom()
   @type current_user_role :: role
+  @type context :: map()
+  @type scoped_struct :: struct()
+  @type rule :: atom()
 
-  @callback get_current_user(context :: map()) :: current_user
+  @callback get_current_user(context) :: current_user
 
   @callback get_user_role(current_user) :: role
 
@@ -17,22 +20,20 @@ defmodule Rajska.Authorization do
 
   @callback role_authorized?(current_user_role, allowed_role :: role) :: boolean()
 
-  @callback field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
+  @callback has_user_access?(current_user, scoped_struct, rule) :: boolean()
 
-  @callback has_user_access?(
-    current_user,
-    scope :: module(),
-    {field :: any(), field_value :: any()},
-    rule :: any()
-  ) :: boolean()
+  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
 
-  @callback unauthorized_msg(resolution :: Resolution.t()) :: String.t()
+  @callback context_role_authorized?(context, allowed_role :: role) :: boolean()
+
+  @callback context_user_authorized?(context, scoped_struct, rule) :: boolean()
 
   @optional_callbacks get_current_user: 1,
                       get_user_role: 1,
                       not_scoped_roles: 0,
                       role_authorized?: 2,
-                      field_authorized?: 3,
-                      has_user_access?: 4,
-                      unauthorized_msg: 1
+                      has_user_access?: 3,
+                      unauthorized_message: 1,
+                      context_role_authorized?: 2,
+                      context_user_authorized?: 3
 end
