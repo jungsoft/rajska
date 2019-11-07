@@ -120,7 +120,7 @@ defmodule Rajska.ObjectScopeAuthorization do
     default_rule = Rajska.apply_auth_mod(context, :default_rule)
     rule = Type.meta(type, :rule) || default_rule
 
-    case !scope? || authorized?(context, root_value, rule) do
+    case authorized?(scope?, context, root_value, rule) do
       true -> %{result | fields: walk_result(fields, context)}
       false -> Map.put(result, :errors, [error(emitter)])
     end
@@ -155,7 +155,9 @@ defmodule Rajska.ObjectScopeAuthorization do
     end
   end
 
-  defp authorized?(context, scoped_struct, rule) do
+  defp authorized?(false, _context, _scoped_struct, _rule), do: true
+
+  defp authorized?(true, context, scoped_struct, rule) do
     Rajska.apply_auth_mod(context, :context_user_authorized?, [context, scoped_struct, rule])
   end
 
