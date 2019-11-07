@@ -23,7 +23,7 @@ defmodule Rajska do
 
   ## Usage
 
-  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2`, `c:Rajska.Authorization.has_user_access?/3` and `c:Rajska.Authorization.field_authorized?/3`, but you can override them with your application needs.
+  Create your Authorization module, which will implement the `Rajska.Authorization` behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as `c:Rajska.Authorization.role_authorized?/2` and `c:Rajska.Authorization.has_user_access?/3`, but you can override them with your application needs.
 
   ```elixir
   defmodule Authorization do

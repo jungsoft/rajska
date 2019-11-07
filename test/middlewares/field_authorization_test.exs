@@ -157,7 +157,7 @@ defmodule Rajska.FieldAuthorizationTest do
     assert is_binary(data["phone"])
   end
 
-  test "Works when defining scope_field_by" do
+  test "Works when defining scope_field?" do
     user = %{role: :user, id: 1}
     get_user_query = get_field_scope_user(2)
 

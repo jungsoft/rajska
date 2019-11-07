@@ -28,7 +28,7 @@ end
 
 ## Usage
 
-Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2), [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) and [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3), but you can override them with your application needs.
+Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) and [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3), but you can override them with your application needs.
 
 ```elixir
   defmodule Authorization do
@@ -258,16 +258,14 @@ end
 
 ### Field Authorization
 
-Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [field_authorized?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:field_authorized?/3) function, which receives the user role, the meta `scope_by` atom defined in the object schema and the `source` object that is resolving the field.
+Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) function, which receives the user role, the `source` object that is resolving the field and the object rule.
 
 Usage:
 
-[Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](#usage). Then add the meta `scope_by` to an object and meta `private` to your sensitive fields:
+[Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](#usage).
 
 ```elixir
   object :user do
-    meta :scope_by, :id
-
     field :name, :string
     field :is_email_public, :boolean
 

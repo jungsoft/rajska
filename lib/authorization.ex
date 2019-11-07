@@ -17,13 +17,7 @@ defmodule Rajska.Authorization do
 
   @callback role_authorized?(current_user_role, allowed_role :: role) :: boolean()
 
-  @callback field_authorized?(current_user_role, scope_by :: atom(), source :: map()) :: boolean()
-
-  @callback has_user_access?(
-    current_user,
-    scoped_struct :: struct(),
-    rule :: any()
-  ) :: boolean()
+  @callback has_user_access?(current_user, scoped_struct :: struct(), rule :: any()) :: boolean()
 
   @callback unauthorized_msg(resolution :: Resolution.t()) :: String.t()
 
@@ -31,7 +25,6 @@ defmodule Rajska.Authorization do
                       get_user_role: 1,
                       not_scoped_roles: 0,
                       role_authorized?: 2,
-                      field_authorized?: 3,
                       has_user_access?: 3,
                       unauthorized_msg: 1
 end
