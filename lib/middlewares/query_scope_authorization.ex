@@ -84,7 +84,9 @@ defmodule Rajska.QueryScopeAuthorization do
     arguments_source = get_arguments_source!(resolution, scope)
 
     arg_fields
-    |> Enum.all?(& apply_scope_authorization(resolution, scope, arguments_source, &1, rule, optional))
+    |> Enum.map(& get_scoped_struct_field(arguments_source, &1, optional, resolution.definition.name))
+    |> Enum.filter(& !!&1)
+    |> has_user_access?(scope, resolution.context, rule, optional)
     |> update_result(resolution)
   end
 
@@ -98,25 +100,23 @@ defmodule Rajska.QueryScopeAuthorization do
 
   defp get_arguments_source!(%Resolution{arguments: args}, _scope), do: args
 
-  def apply_scope_authorization(
-    %Resolution{definition: definition, context: context},
-    scope,
-    arguments_source,
-    {scope_field, arg_field},
-    rule,
-    optional
-  ) do
+  def get_scoped_struct_field(arguments_source, {scope_field, arg_field}, optional, query_name) do
     case get_scope_field_value(arguments_source, arg_field) do
-      nil -> optional || raise "Error in query #{definition.name}: no argument #{inspect arg_field} found in #{inspect arguments_source}"
-      field_value -> has_context_access?(context, scope, {scope_field, field_value}, rule)
+      nil when optional === true -> nil
+      nil when optional === false -> raise "Error in query #{query_name}: no argument #{inspect arg_field} found in #{inspect arguments_source}"
+      field_value -> {scope_field, field_value}
     end
   end
 
   defp get_scope_field_value(arguments_source, fields) when is_list(fields), do: get_in(arguments_source, fields)
   defp get_scope_field_value(arguments_source, field) when is_atom(field), do: Map.get(arguments_source, field)
 
-  defp has_context_access?(context, scope, {scope_field, field_value}, rule) do
-    Rajska.apply_auth_mod(context, :has_context_access?, [context, scope, {scope_field, field_value}, rule])
+  defp has_user_access?([], _scope, _context, _rule, true), do: true
+
+  defp has_user_access?(scoped_struct_fields, scope, context, rule, _optional) do
+    scoped_struct = scope.__struct__(scoped_struct_fields)
+
+    Rajska.apply_auth_mod(context, :has_user_access?, [context.current_user, scoped_struct, rule])
   end
 
   defp update_result(true, resolution), do: resolution
