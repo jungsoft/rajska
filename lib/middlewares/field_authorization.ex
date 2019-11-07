@@ -2,7 +2,7 @@ defmodule Rajska.FieldAuthorization do
   @moduledoc """
   Absinthe middleware to ensure field permissions.
 
-  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the `c:Rajska.Authorization.has_user_access?/3` function, which receives the user role, the `source` object that is resolving the field and the object rule.
+  Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the `c:Rajska.Authorization.has_user_access?/3` function, which receives the user role, the `source` object that is resolving the field and the field rule.
 
   ## Usage
 
