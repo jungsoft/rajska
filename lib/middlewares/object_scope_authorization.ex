@@ -156,7 +156,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   defp authorized?(context, scoped_struct, rule) do
-    Rajska.apply_auth_mod(context, :has_user_access?, [context.current_user, scoped_struct, rule])
+    Rajska.apply_auth_mod(context, :context_user_authorized?, [context, scoped_struct, rule])
   end
 
   defp error(%{source_location: location, schema_node: %{type: type}}) do

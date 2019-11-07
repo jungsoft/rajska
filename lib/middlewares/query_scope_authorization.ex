@@ -116,7 +116,7 @@ defmodule Rajska.QueryScopeAuthorization do
   defp has_user_access?(scoped_struct_fields, scope, context, rule, _optional) do
     scoped_struct = scope.__struct__(scoped_struct_fields)
 
-    Rajska.apply_auth_mod(context, :has_user_access?, [context.current_user, scoped_struct, rule])
+    Rajska.apply_auth_mod(context, :context_user_authorized?, [context, scoped_struct, rule])
   end
 
   defp update_result(true, resolution), do: resolution

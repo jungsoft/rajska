@@ -116,17 +116,17 @@ defmodule Rajska do
         |> super_role?()
       end
 
-      def context_authorized?(context, allowed_role) do
+      def context_role_authorized?(context, allowed_role) do
         context
         |> get_current_user()
         |> get_user_role()
         |> role_authorized?(allowed_role)
       end
 
-      def has_context_access?(context, scope, {scope_field, field_value}, rule) do
+      def context_user_authorized?(context, scoped_struct, rule) do
         context
         |> get_current_user()
-        |> has_user_access?(scope.__struct__([{scope_field, field_value}]), rule)
+        |> has_user_access?(scoped_struct, rule)
       end
 
       defoverridable Authorization
