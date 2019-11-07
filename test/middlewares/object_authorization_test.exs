@@ -43,6 +43,13 @@ defmodule Rajska.ObjectAuthorizationTest do
           }}
         end
       end
+
+      field :enum_query, :role_enum do
+        middleware Rajska.QueryAuthorization, [permit: :all, scope: false]
+        resolve fn _, _ ->
+          {:ok, :user}
+        end
+      end
     end
 
     object :wallet_balance do
@@ -57,6 +64,11 @@ defmodule Rajska.ObjectAuthorizationTest do
       field :name, :string
 
       field :wallet_balance, :wallet_balance
+    end
+
+    enum :role_enum do
+      value :user
+      value :admin
     end
 
     object :user do
@@ -133,6 +145,13 @@ defmodule Rajska.ObjectAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Query that returns an enum doesn't return errors" do
+    {:ok, result} = Absinthe.run(enum_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"enumQuery" => "USER"}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   defp all_query do
     """
     {
@@ -184,4 +203,6 @@ defmodule Rajska.ObjectAuthorizationTest do
     }
     """
   end
+
+  defp enum_query, do:  "{ enumQuery }"
 end

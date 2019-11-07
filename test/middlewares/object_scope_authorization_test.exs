@@ -105,20 +105,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
         end
       end
 
-      field :object_not_scoped_query, :user do
-        arg :id, non_null(:integer)
-        resolve fn args, _ ->
-          {:ok, %User{id: args.id, name: "bob", not_scoped: %NotScoped{id: 1}}}
-        end
-      end
-
-      field :object_not_struct_query, :user do
-        arg :id, non_null(:integer)
-        resolve fn args, _ ->
-          {:ok, %{id: args.id, name: "bob"}}
-        end
-      end
-
       field :users_query, list_of(:user) do
         resolve fn _args, _ ->
           {:ok, [
@@ -157,7 +143,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :user do
-      meta :scope_by, :id
+      meta :scope?, true
 
       field :id, :integer
       field :email, :string
@@ -169,8 +155,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :company do
-      meta :scope_by, :user_id
-
       field :id, :integer
       field :user_id, :integer
       field :name, :string
@@ -178,31 +162,29 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
 
     object :wallet do
-      meta :scope_by, :user_id
-
       field :total, :integer
     end
 
     object :not_scoped do
+      meta :scope?, false
       field :name, :string
     end
 
     object :user_rule do
-      meta :scope_by, :id
       meta :rule, :object
 
       field :id, :integer
     end
 
     object :both_scopes do
-      meta :scope_by, :id
-      meta :scope_object_by, :id
+      meta :scope?, true
+      meta :scope_object?, false
 
       field :name, :string
     end
 
     object :object_scope_user do
-      meta :scope_object_by, :id
+      meta :scope_object?, true
 
       field :id, :integer
     end
@@ -244,7 +226,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     ] == errors
   end
 
-  test "Works when defining scope_object_by instead of scope_by" do
+  test "Works when defining scope_object? and not scope?" do
     query = "{ getObjectScopeUser(id: 1) { id } }"
     {:ok, result} = run_pipeline(query, context(:user, 1))
     assert %{data: %{"getObjectScopeUser" => %{}}} = result
@@ -365,21 +347,9 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
-  test "Raises when no meta scope_by is defined for an object" do
-    assert_raise RuntimeError, ~r/No meta scope_by or scope_object_by defined for object :not_scoped/, fn ->
-      run_pipeline(object_not_scoped_query(2), context(:user, 2))
-    end
-  end
-
-  test "Raises when both scope metas are defined for an object" do
-    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_object_by is defined, then scope_by must not be defined/, fn ->
+  test "Raises when both scope? metas are defined for an object" do
+    assert_raise RuntimeError, ~r/Error in :both_scopes. If scope_object\? is defined, then scope\? must not be defined/, fn ->
       run_pipeline("{ getBothScopes { name } }", context(:user, 2))
-    end
-  end
-
-  test "Raises when returned object is not a struct" do
-    assert_raise RuntimeError, ~r/Expected a Struct for object :user, got %{id: 2, name: \"bob\"}/, fn ->
-      run_pipeline(object_not_struct_query(2), context(:user, 2))
     end
   end
 
@@ -389,18 +359,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
       allQuery(userId: #{id}) {
         name
         email
-      }
-    }
-    """
-  end
-
-  defp object_not_scoped_query(id) do
-    """
-    {
-      objectNotScopedQuery(id: #{id}) {
-        notScoped {
-          name
-        }
       }
     }
     """
@@ -490,17 +448,6 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
     {
       nilUserQuery {
-        name
-        email
-      }
-    }
-    """
-  end
-
-  defp object_not_struct_query(id) do
-    """
-    {
-      objectNotStructQuery(id: #{id}) {
         name
         email
       }
