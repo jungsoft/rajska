@@ -107,7 +107,7 @@ defmodule Rajska do
         super_user? || owner?
       end
 
-      def unauthorized_msg(_resolution), do: "unauthorized"
+      def unauthorized_message(_resolution), do: "unauthorized"
 
       def super_user?(context) do
         context

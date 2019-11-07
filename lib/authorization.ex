@@ -19,12 +19,12 @@ defmodule Rajska.Authorization do
 
   @callback has_user_access?(current_user, scoped_struct :: struct(), rule :: any()) :: boolean()
 
-  @callback unauthorized_msg(resolution :: Resolution.t()) :: String.t()
+  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
 
   @optional_callbacks get_current_user: 1,
                       get_user_role: 1,
                       not_scoped_roles: 0,
                       role_authorized?: 2,
                       has_user_access?: 3,
-                      unauthorized_msg: 1
+                      unauthorized_message: 1
 end
