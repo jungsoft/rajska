@@ -51,7 +51,7 @@ defmodule Rajska.ObjectScopeAuthorization do
       valid_roles: [:user, :admin]
 
     @impl true
-    def has_user_access?(%{role: :admin}, _, _scoped_struct, _rule), do: true
+    def has_user_access?(%{role: :admin}, _scoped_struct, _rule), do: true
     def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
     def has_user_access?(_current_user, %User{}, _rule), do: false
   end
