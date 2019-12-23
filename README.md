@@ -83,7 +83,7 @@ Middlewares usage can be found below.
 
 ## Middlewares
 
-### Query Authorization
+## Query Authorization
 
 Ensures Absinthe's queries can only be accessed by determined users.
 
@@ -119,13 +119,13 @@ Usage:
 
 Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
 
-### Query Scope Authorization
+## Query Scope Authorization
 
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
-## Options
+### Options
 
 All the following options are sent to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3):
 
@@ -139,7 +139,7 @@ All the following options are sent to [has_user_access?/3](https://hexdocs.pm/ra
 * `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
 * `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
 
-### Object Authorization
+## Object Authorization
 
 Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the permission defined in each object meta `authorize`.
 
@@ -188,7 +188,7 @@ With the permissions above, a query like the following would only be allowed by 
 
 Object Authorization middleware runs after Query Authorization middleware (if added) and before the query is resolved by recursively checking the requested objects permissions in the [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) function (which is also used by Query Authorization). It can be overridden by your own implementation.
 
-### Object Scope Authorization
+## Object Scope Authorization
 
 Absinthe Phase to perform object scoping.
 
@@ -256,7 +256,7 @@ defmodule Authorization do
 end
 ```
 
-### Field Authorization
+## Field Authorization
 
 Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#field/4) according to the result of the [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3) function, which receives the user role, the `source` object that is resolving the field and the field rule.
 
