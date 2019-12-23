@@ -208,7 +208,7 @@ Usage:
 
 ```elixir
 object :user do
-  # Turn on Object and Field scoping, but if the FieldAuthorization middleware is not included, this is the same as using `scope_object?`
+  # Turn on both Object and Field scoping, but if the FieldAuthorization middleware is not included, this is the same as using `scope_object?`
   meta :scope?, true
 
   field :id, :integer
@@ -264,11 +264,24 @@ Usage:
 
 ```elixir
   object :user do
+    # Turn on both Object and Field scoping, but if the ObjectScope Phase is not included, this is the same as using `scope_field?`
+    meta :scope?, true
+
     field :name, :string
     field :is_email_public, :boolean
 
     field :phone, :string, meta: [private: true]
     field :email, :string, meta: [private: & !&1.is_email_public]
+
+    # Can also use custom rules for each field
+    field :always_private, :string, meta: [private: true, rule: :private]
+  end
+
+  object :field_scope_user do
+    meta :scope_field?, true
+
+    field :name, :string
+    field :phone, :string, meta: [private: true]
   end
 ```
 

@@ -9,13 +9,26 @@ defmodule Rajska.FieldAuthorization do
   [Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage).
 
   ```elixir
-  object :user do
-    field :name, :string
-    field :is_email_public, :boolean
+    object :user do
+      # Turn on both Object and Field scoping, but if the ObjectScope Phase is not included, this is the same as using `scope_field?`
+      meta :scope?, true
 
-    field :phone, :string, meta: [private: true]
-    field :email, :string, meta: [private: & !&1.is_email_public]
-  end
+      field :name, :string
+      field :is_email_public, :boolean
+
+      field :phone, :string, meta: [private: true]
+      field :email, :string, meta: [private: & !&1.is_email_public]
+
+      # Can also use custom rules for each field
+      field :always_private, :string, meta: [private: true, rule: :private]
+    end
+
+    object :field_scope_user do
+      meta :scope_field?, true
+
+      field :name, :string
+      field :phone, :string, meta: [private: true]
+    end
   ```
 
   As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of another field.
