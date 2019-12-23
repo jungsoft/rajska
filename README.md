@@ -109,10 +109,18 @@ Usage:
     end
 
     field :delete_user, :user do
-      arg :id, non_null(:integer)
+      arg :user_id, non_null(:integer)
 
-      middleware Rajska.QueryAuthorization, permit: :admin
+      # Providing a map for args is useful to map query argument to struct field.
+      middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: User, args: %{id: :user_id}]
       resolve &AccountsResolver.delete_user/2
+    end
+
+    field :invite_user, :user do
+      arg :email, non_null(:string)
+
+      middleware Rajska.QueryAuthorization, [permit: :admin, rule: :invitation]
+      resolve &AccountsResolver.invite_user/2
     end
   end
 ```
@@ -124,6 +132,8 @@ Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Raj
 Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
+
+There are also extra options for this middleware, such as `:rule` and `:optional`. All possibilities are listed below:
 
 ### Options
 
