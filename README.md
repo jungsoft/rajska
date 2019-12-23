@@ -104,6 +104,39 @@ Ensures Absinthe's queries can only be accessed by determined users.
       arg :id, non_null(:integer)
       arg :params, non_null(:user_params)
 
+      middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: false]
+      resolve &AccountsResolver.update_user/2
+    end
+
+    field :invite_user, :user do
+      arg :email, non_null(:string)
+
+      middleware Rajska.QueryAuthorization, permit: :admin
+      resolve &AccountsResolver.invite_user/2
+    end
+  end
+```
+
+Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
+
+### Query Scope Authorization
+
+Provides scoping to Absinthe's queries, allowing for more complex authorization rules. It is used together with [Query Authorization](#query-authorization).
+
+```elixir
+  mutation do
+    field :create_user, :user do
+      arg :params, non_null(:user_params)
+
+      # all does not require scoping, since it means anyone can execute this query, even without being logged in.
+      middleware Rajska.QueryAuthorization, permit: :all
+      resolve &AccountsResolver.create_user/2
+    end
+
+    field :update_user, :user do
+      arg :id, non_null(:integer)
+      arg :params, non_null(:user_params)
+
       middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
       resolve &AccountsResolver.update_user/2
     end
@@ -116,20 +149,23 @@ Ensures Absinthe's queries can only be accessed by determined users.
       resolve &AccountsResolver.delete_user/2
     end
 
-    field :invite_user, :user do
-      arg :email, non_null(:string)
+    input_object :user_params do
+      field :id, non_null(:integer)
+    end
 
-      middleware Rajska.QueryAuthorization, [permit: :admin, rule: :invitation]
+    field :accept_user, :user do
+      arg :params, non_null(:user_params)
+
+      middleware Rajska.QueryAuthorization, [
+        permit: :user,
+        scope: User,
+        args: %{id: [:params, :id]},
+        rule: :accept_user
+      ]
       resolve &AccountsResolver.invite_user/2
     end
   end
 ```
-
-Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
-
-### Query Scope Authorization
-
-Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#query-authorization).
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
