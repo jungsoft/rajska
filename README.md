@@ -133,7 +133,7 @@ Provides scoping to Absinthe's queries, as seen above in [Query Authorization](#
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
 
-There are also extra options for this middleware, such as `:rule` and `:optional`. All possibilities are listed below:
+There are also extra options for this middleware, supporting the definition of custom rules, access of nested parameters and allowing optional parameters. All possibilities are listed below:
 
 ### Options
 
@@ -168,7 +168,6 @@ Usage:
     meta :authorize, :user
 
     field :name, :string
-
     field :wallet_balance, :wallet_balance
   end
 
@@ -176,7 +175,6 @@ Usage:
     meta :authorize, :all
 
     field :email, :string
-
     field :company, :company
   end
 ```
@@ -202,7 +200,7 @@ Object Authorization middleware runs after Query Authorization middleware (if ad
 
 Absinthe Phase to perform object scoping.
 
-Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
+Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the underlying struct.
 
 Usage:
 
@@ -210,7 +208,8 @@ Usage:
 
 ```elixir
 object :user do
-  meta :scope, User # Same as meta :scope, {User, :id}
+  # Turn on Object and Field scoping, but if the FieldAuthorization middleware is not included, this is the same as using `scope_object?`
+  meta :scope?, true
 
   field :id, :integer
   field :email, :string
@@ -220,7 +219,7 @@ object :user do
 end
 
 object :company do
-  meta :scope, {Company, :user_id}
+  meta :scope_object?, true
 
   field :id, :integer
   field :user_id, :integer
@@ -229,7 +228,8 @@ object :company do
 end
 
 object :wallet do
-  meta :scope, Wallet
+  meta :scope?, true
+  meta :rule, :object_authorization
 
   field :total, :integer
 end
@@ -247,24 +247,12 @@ defmodule Authorization do
   def has_user_access?(%{role: :admin}, %User{}, _rule), do: true
   def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
   def has_user_access?(_current_user, %User{}, _rule), do: false
+
+  def has_user_access?(%{id: user_id}, %Wallet{user_id: id}, :object_authorization), do: user_id == id
 end
 ```
 
-Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
-For example, to not raise any authorization errors and just return `nil`:
-
-```elixir
-defmodule Authorization do
-  use Rajska,
-    valid_roles: [:user, :admin],
-    super_role: :admin
-
-  @impl true
-  def has_user_access?(%{role: :admin}, %User{}, _rule), do: true
-  def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
-  def has_user_access?(_current_user, %User{}, _rule), do: false
-end
-```
+This way different rules can be set to the same struct.
 
 ## Field Authorization
 

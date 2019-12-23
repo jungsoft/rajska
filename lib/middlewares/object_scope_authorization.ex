@@ -2,7 +2,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   @moduledoc """
   Absinthe Phase to perform object scoping.
 
-  Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the value of the field defined in each object meta `scope`.
+  Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.Notation.html#object/3) requested in a query by checking the underlying struct.
 
   ## Usage
 
@@ -10,7 +10,8 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   ```elixir
   object :user do
-    meta :rule, :default
+    # Turn on Object and Field scoping, but if the FieldAuthorization middleware is not included, this is the same as using `scope_object?`
+    meta :scope?, true
 
     field :id, :integer
     field :email, :string
@@ -20,7 +21,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   object :company do
-    meta :rule, :default
+    meta :scope_object?, true
 
     field :id, :integer
     field :user_id, :integer
@@ -29,59 +30,28 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   object :wallet do
-    meta :rule, :read_only
+    meta :scope?, true
+    meta :rule, :object_authorization
 
-    field :id, :integer
     field :total, :integer
   end
-
-  object :available_dates do
-    meta :scope?, false
-
-    field :id, :integer
-    field :date, :date
-  end
   ```
 
-  To define custom rules for the scoping, use `c:Rajska.Authorization.has_user_access?/3`. For example:
+  To define custom rules for the scoping, use [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3). For example:
 
   ```elixir
   defmodule Authorization do
     use Rajska,
-      valid_roles: [:user, :admin]
+      valid_roles: [:user, :admin],
+      super_role: :admin
 
     @impl true
-    def has_user_access?(%{role: :admin}, _scoped_struct, _rule), do: true
+    def has_user_access?(%{role: :admin}, %User{}, _rule), do: true
     def has_user_access?(%{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
     def has_user_access?(_current_user, %User{}, _rule), do: false
-  end
-  ```
 
-  Keep in mind that the `field_value` provided to `has_user_access?/3` can be `nil`. This case can be handled as you wish.
-  For example, to not raise any authorization errors and just return `nil`:
-
-  ```elixir
-  defmodule Authorization do
-    use Rajska,
-      valid_roles: [:user, :admin]
-
-    @impl true
-    def has_user_access?(%User{role: :admin}, _scoped_struct, _rule), do: true
-    def has_user_access?(%User{id: user_id}, %User{id: id}, _rule) when user_id === id, do: true
-    def has_user_access?(_current_user, %User{}, _rule), do: false
-  end
-  ```
-
-  The `rule` keyword is not mandatory and will be pattern matched in `has_user_access?/3`:
-
-  ```elixir
-  defmodule Authorization do
-    use Rajska,
-      valid_roles: [:user, :admin]
-
-    @impl true
-    def has_user_access?(%{id: user_id}, %Wallet{}, :read_only), do: true
-    def has_user_access?(%{id: user_id}, %Wallet{}, :default), do: false
+    def has_user_access?(%{id: user_id}, %Wallet{user_id: id}, :object_authorization), do: user_id == id
+    def has_user_access?(%{id: user_id}, %Wallet{user_id: id}, :always_block), do: false
   end
   ```
 
