@@ -7,36 +7,47 @@ defmodule Rajska.QueryScopeAuthorization do
   [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](https://hexdocs.pm/rajska/Rajska.html#module-usage). Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former. Then set the scoped module and argument field:
 
   ```elixir
-  mutation do
-    field :create_user, :user do
-      arg :params, non_null(:user_params)
+    mutation do
+      field :create_user, :user do
+        arg :params, non_null(:user_params)
 
-      middleware Rajska.QueryAuthorization, permit: :all
-      resolve &AccountsResolver.create_user/2
+        # all does not require scoping, since it means anyone can execute this query, even without being logged in.
+        middleware Rajska.QueryAuthorization, permit: :all
+        resolve &AccountsResolver.create_user/2
+      end
+
+      field :update_user, :user do
+        arg :id, non_null(:integer)
+        arg :params, non_null(:user_params)
+
+        middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
+        resolve &AccountsResolver.update_user/2
+      end
+
+      field :delete_user, :user do
+        arg :user_id, non_null(:integer)
+
+        # Providing a map for args is useful to map query argument to struct field.
+        middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: User, args: %{id: :user_id}]
+        resolve &AccountsResolver.delete_user/2
+      end
+
+      input_object :user_params do
+        field :id, non_null(:integer)
+      end
+
+      field :accept_user, :user do
+        arg :params, non_null(:user_params)
+
+        middleware Rajska.QueryAuthorization, [
+          permit: :user,
+          scope: User,
+          args: %{id: [:params, :id]},
+          rule: :accept_user
+        ]
+        resolve &AccountsResolver.invite_user/2
+      end
     end
-
-    field :update_user, :user do
-      arg :id, non_null(:integer)
-      arg :params, non_null(:user_params)
-
-      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
-      resolve &AccountsResolver.update_user/2
-    end
-
-    field :delete_user, :user do
-      arg :id, non_null(:integer)
-
-      middleware Rajska.QueryAuthorization, permit: :admin
-      resolve &AccountsResolver.delete_user/2
-    end
-
-    field :invite_user, :user do
-      arg :email, non_null(:string)
-
-      middleware Rajska.QueryAuthorization, [permit: :user, scope: User, rule: :invitation]
-      resolve &AccountsResolver.invite_user/2
-    end
-  end
   ```
 
   In the above example, `:all` and `:admin` permissions don't require the `:scope` keyword, as defined in the `c:Rajska.Authorization.not_scoped_roles/0` function, but you can modify this behavior by overriding it.
