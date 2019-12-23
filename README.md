@@ -31,29 +31,29 @@ end
 Create your Authorization module, which will implement the [Rajska Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) behaviour and contain the logic to validate user permissions and will be called by Rajska middlewares. Rajska provides some helper functions by default, such as [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) and [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3), but you can override them with your application needs.
 
 ```elixir
-  defmodule Authorization do
-    use Rajska,
-      valid_roles: [:user, :admin],
-      super_role: :admin,
-      default_rule: :default
-  end
+defmodule Authorization do
+  use Rajska,
+    valid_roles: [:user, :admin],
+    super_role: :admin,
+    default_rule: :default
+end
 ```
 
 Add your [Authorization](https://hexdocs.pm/rajska/Rajska.Authorization.html) module to your `Absinthe.Schema` [context/1](https://hexdocs.pm/absinthe/Absinthe.Schema.html#c:context/1) callback and the desired middlewares to the [middleware/3](https://hexdocs.pm/absinthe/Absinthe.Middleware.html#module-the-middleware-3-callback) callback:
 
 ```elixir
-  def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
-  def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
-  when identifier in [:query, :mutation] do
-    middleware
-    |> Rajska.add_query_authorization(field, Authorization)
-    |> Rajska.add_object_authorization()
-  end
+def middleware(middleware, field, %Absinthe.Type.Object{identifier: identifier})
+when identifier in [:query, :mutation] do
+  middleware
+  |> Rajska.add_query_authorization(field, Authorization)
+  |> Rajska.add_object_authorization()
+end
 
-  def middleware(middleware, field, object) do
-    Rajska.add_field_authorization(middleware, field, object)
-  end
+def middleware(middleware, field, object) do
+  Rajska.add_field_authorization(middleware, field, object)
+end
 ```
 
 The only exception is [Object Scope Authorization](#object-scope-authorization), which isn't a middleware, but an [Absinthe Phase](https://hexdocs.pm/absinthe/Absinthe.Phase.html). To use it, add it to your pipeline after the resolution:
@@ -92,29 +92,29 @@ Ensures Absinthe's queries can only be accessed by determined users.
 [Create your Authorization module and add it and QueryAuthorization to your Absinthe.Schema](#usage). Then set the permitted role to access a query or mutation:
 
 ```elixir
-  mutation do
-    field :create_user, :user do
-      arg :params, non_null(:user_params)
+mutation do
+  field :create_user, :user do
+    arg :params, non_null(:user_params)
 
-      middleware Rajska.QueryAuthorization, permit: :all
-      resolve &AccountsResolver.create_user/2
-    end
-
-    field :update_user, :user do
-      arg :id, non_null(:integer)
-      arg :params, non_null(:user_params)
-
-      middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: false]
-      resolve &AccountsResolver.update_user/2
-    end
-
-    field :invite_user, :user do
-      arg :email, non_null(:string)
-
-      middleware Rajska.QueryAuthorization, permit: :admin
-      resolve &AccountsResolver.invite_user/2
-    end
+    middleware Rajska.QueryAuthorization, permit: :all
+    resolve &AccountsResolver.create_user/2
   end
+
+  field :update_user, :user do
+    arg :id, non_null(:integer)
+    arg :params, non_null(:user_params)
+
+    middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: false]
+    resolve &AccountsResolver.update_user/2
+  end
+
+  field :invite_user, :user do
+    arg :email, non_null(:string)
+
+    middleware Rajska.QueryAuthorization, permit: :admin
+    resolve &AccountsResolver.invite_user/2
+  end
+end
 ```
 
 Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:role_authorized?/2) to check if the [user](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_current_user/1) [role](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:get_user_role/1) is authorized to perform the query.
@@ -124,47 +124,47 @@ Query authorization will call [role_authorized?/2](https://hexdocs.pm/rajska/Raj
 Provides scoping to Absinthe's queries, allowing for more complex authorization rules. It is used together with [Query Authorization](#query-authorization).
 
 ```elixir
-  mutation do
-    field :create_user, :user do
-      arg :params, non_null(:user_params)
+mutation do
+  field :create_user, :user do
+    arg :params, non_null(:user_params)
 
-      # all does not require scoping, since it means anyone can execute this query, even without being logged in.
-      middleware Rajska.QueryAuthorization, permit: :all
-      resolve &AccountsResolver.create_user/2
-    end
-
-    field :update_user, :user do
-      arg :id, non_null(:integer)
-      arg :params, non_null(:user_params)
-
-      middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
-      resolve &AccountsResolver.update_user/2
-    end
-
-    field :delete_user, :user do
-      arg :user_id, non_null(:integer)
-
-      # Providing a map for args is useful to map query argument to struct field.
-      middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: User, args: %{id: :user_id}]
-      resolve &AccountsResolver.delete_user/2
-    end
-
-    input_object :user_params do
-      field :id, non_null(:integer)
-    end
-
-    field :accept_user, :user do
-      arg :params, non_null(:user_params)
-
-      middleware Rajska.QueryAuthorization, [
-        permit: :user,
-        scope: User,
-        args: %{id: [:params, :id]},
-        rule: :accept_user
-      ]
-      resolve &AccountsResolver.invite_user/2
-    end
+    # all does not require scoping, since it means anyone can execute this query, even without being logged in.
+    middleware Rajska.QueryAuthorization, permit: :all
+    resolve &AccountsResolver.create_user/2
   end
+
+  field :update_user, :user do
+    arg :id, non_null(:integer)
+    arg :params, non_null(:user_params)
+
+    middleware Rajska.QueryAuthorization, [permit: :user, scope: User] # same as [permit: :user, scope: User, args: :id]
+    resolve &AccountsResolver.update_user/2
+  end
+
+  field :delete_user, :user do
+    arg :user_id, non_null(:integer)
+
+    # Providing a map for args is useful to map query argument to struct field.
+    middleware Rajska.QueryAuthorization, [permit: [:user, :manager], scope: User, args: %{id: :user_id}]
+    resolve &AccountsResolver.delete_user/2
+  end
+
+  input_object :user_params do
+    field :id, non_null(:integer)
+  end
+
+  field :accept_user, :user do
+    arg :params, non_null(:user_params)
+
+    middleware Rajska.QueryAuthorization, [
+      permit: :user,
+      scope: User,
+      args: %{id: [:params, :id]},
+      rule: :accept_user
+    ]
+    resolve &AccountsResolver.invite_user/2
+  end
+end
 ```
 
 In the above example, `:all` and `:admin` (`super_role`) permissions don't require the `:scope` keyword, but you can modify this behavior by overriding the [not_scoped_roles/0](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:not_scoped_roles/0) function.
@@ -194,25 +194,25 @@ Authorizes all Absinthe's [objects](https://hexdocs.pm/absinthe/Absinthe.Schema.
 [Create your Authorization module and add it and ObjectAuthorization to your Absinthe.Schema](#usage). Then set the permitted role to access an object:
 
 ```elixir
-  object :wallet_balance do
-    meta :authorize, :admin
+object :wallet_balance do
+  meta :authorize, :admin
 
-    field :total, :integer
-  end
+  field :total, :integer
+end
 
-  object :company do
-    meta :authorize, :user
+object :company do
+  meta :authorize, :user
 
-    field :name, :string
-    field :wallet_balance, :wallet_balance
-  end
+  field :name, :string
+  field :wallet_balance, :wallet_balance
+end
 
-  object :user do
-    meta :authorize, :all
+object :user do
+  meta :authorize, :all
 
-    field :email, :string
-    field :company, :company
-  end
+  field :email, :string
+  field :company, :company
+end
 ```
 
 With the permissions above, a query like the following would only be allowed by an admin user:
@@ -299,26 +299,26 @@ Authorizes Absinthe's object [field](https://hexdocs.pm/absinthe/Absinthe.Schema
 [Create your Authorization module and add it and FieldAuthorization to your Absinthe.Schema](#usage).
 
 ```elixir
-  object :user do
-    # Turn on both Object and Field scoping, but if the ObjectScope Phase is not included, this is the same as using `scope_field?`
-    meta :scope?, true
+object :user do
+  # Turn on both Object and Field scoping, but if the ObjectScope Phase is not included, this is the same as using `scope_field?`
+  meta :scope?, true
 
-    field :name, :string
-    field :is_email_public, :boolean
+  field :name, :string
+  field :is_email_public, :boolean
 
-    field :phone, :string, meta: [private: true]
-    field :email, :string, meta: [private: & !&1.is_email_public]
+  field :phone, :string, meta: [private: true]
+  field :email, :string, meta: [private: & !&1.is_email_public]
 
-    # Can also use custom rules for each field
-    field :always_private, :string, meta: [private: true, rule: :private]
-  end
+  # Can also use custom rules for each field
+  field :always_private, :string, meta: [private: true, rule: :private]
+end
 
-  object :field_scope_user do
-    meta :scope_field?, true
+object :field_scope_user do
+  meta :scope_field?, true
 
-    field :name, :string
-    field :phone, :string, meta: [private: true]
-  end
+  field :name, :string
+  field :phone, :string, meta: [private: true]
+end
 ```
 
 As seen in the example above, a function can also be passed as value to the meta `:private` key, in order to check if a field is private dynamically, depending of the value of another field.
