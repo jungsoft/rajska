@@ -20,12 +20,13 @@ defmodule Rajska.RateLimiter do
     end
   end
 
-  defp get_identifier(%Resolution{context: context, arguments: arguments}, keys, id) do
-    case {keys, id} do
-      {nil, nil} -> Rajska.apply_auth_mod(context, :get_ip, [context])
-      {keys, nil} -> get_in(arguments, List.wrap(keys)) || raise "Invalid configuration in Rate Limiter. Key not found in arguments."
-      {nil, id} -> id
-      {_key, _id} -> raise "Invalid configuration in Rate Limiter. If key is defined, then id must not be defined"
-    end
-  end
+  defp get_identifier(%Resolution{context: context}, nil, nil),
+    do: Rajska.apply_auth_mod(context, :get_ip, [context])
+
+  defp get_identifier(%Resolution{arguments: arguments}, keys, nil),
+    do: get_in(arguments, List.wrap(keys)) || raise "Invalid configuration in Rate Limiter. Key not found in arguments."
+
+  defp get_identifier(%Resolution{}, nil, id), do: id
+
+  defp get_identifier(%Resolution{}, _keys, _id), do: raise "Invalid configuration in Rate Limiter. If key is defined, then id must not be defined"
 end
