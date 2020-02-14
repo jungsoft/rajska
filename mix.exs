@@ -52,6 +52,7 @@ defmodule Rajska.MixProject do
       {:absinthe, "~> 1.4.0"},
       {:excoveralls, "~> 0.11", only: :test},
       {:hammer, "~> 6.0", optional: true},
+      {:mock, "~> 0.3.0", only: :test},
     ]
   end
 
