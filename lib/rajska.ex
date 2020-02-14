@@ -81,6 +81,8 @@ defmodule Rajska do
 
       def get_current_user(%{current_user: current_user}), do: current_user
 
+      def get_ip(%{ip: ip}), do: ip
+
       def get_user_role(%{role: role}), do: role
       def get_user_role(nil), do: nil
 

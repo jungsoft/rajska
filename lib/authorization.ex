@@ -14,6 +14,8 @@ defmodule Rajska.Authorization do
 
   @callback get_current_user(context) :: current_user
 
+  @callback get_ip(context) :: String.t()
+
   @callback get_user_role(current_user) :: role
 
   @callback not_scoped_roles() :: list(role)
@@ -29,6 +31,7 @@ defmodule Rajska.Authorization do
   @callback context_user_authorized?(context, scoped_struct, rule) :: boolean()
 
   @optional_callbacks get_current_user: 1,
+                      get_ip: 1,
                       get_user_role: 1,
                       not_scoped_roles: 0,
                       role_authorized?: 2,
