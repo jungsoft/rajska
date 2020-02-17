@@ -1,6 +1,45 @@
 defmodule Rajska.RateLimiter do
   @moduledoc """
-  Rate limiter absinthe middleware.
+  Rate limiter absinthe middleware. Uses [Hammer](https://github.com/ExHammer/hammer).
+
+  ## Usage
+
+  First configure Hammer, following its documentation. For example:
+
+      config :hammer,
+      backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4,
+                                    cleanup_interval_ms: 60_000 * 10]}
+
+  Add your middleware to the query that should be limited:
+
+      field :default_config, :string do
+        middleware Rajska.RateLimiter
+        resolve fn _, _ -> {:ok, "ok"} end
+      end
+
+  You can also configure it and use multiple rules for limiting in one query:
+
+      field :login_user, :session do
+        arg :email, non_null(:string)
+        arg :password, non_null(:string)
+
+        middleware Rajska.RateLimiter, limit: 10 # Using the default identifier (user IP)
+        middleware Rajska.RateLimiter, keys: :email, limit: 5 # Using the value provided in the email arg
+        resolve &AccountsResolver.login_user/2
+      end
+
+  The allowed configuration are:
+
+  * `scale_ms`: The timespan for the maximum number of actions. Defaults to 60_000.
+  * `limit`: The maximum number of actions in the specified timespan. Defaults to 10.
+  * `id`: An atom or string to be used as the bucket identifier. Note that this will always be the same, so by using this the limit will be global instead of by user.
+  * `keys`: An atom or a list of atoms to get a query argument as identifier. Use a list when the argument is nested.
+  * `error_msg`: The error message to be displayed when rate limit exceeds. Defaults to `"Too many requests"`.
+
+  Note that when neither `id` or `keys` is provided, the default is to use the user's IP. For that, the default behaviour is to use
+  `c:Rajska.Authorization.get_ip/1` to fetch the IP from the absinthe context. That means you need to manually insert the user's IP in the
+  absinthe context before using it as an identifier. See the [absinthe docs](https://hexdocs.pm/absinthe/context-and-authentication.html#content)
+  for more information.
   """
   @behaviour Absinthe.Middleware
 
