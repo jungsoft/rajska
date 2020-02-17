@@ -51,6 +51,8 @@ defmodule Rajska.MixProject do
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false},
       {:absinthe, "~> 1.4.0"},
       {:excoveralls, "~> 0.11", only: :test},
+      {:hammer, "~> 6.0", optional: true},
+      {:mock, "~> 0.3.0", only: :test},
     ]
   end
 

@@ -152,6 +152,12 @@ defmodule Rajska.ObjectAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+
+  test "does not apply when resolution is already resolved" do
+    resolution = %Absinthe.Resolution{state: :resolved}
+    assert resolution == Rajska.ObjectAuthorization.call(resolution, [])
+  end
+
   defp all_query do
     """
     {
