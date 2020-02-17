@@ -115,6 +115,11 @@ defmodule Rajska.RateLimiterTest do
     end
   end
 
+  test "does not apply when resolution is already resolved" do
+    resolution = %Absinthe.Resolution{state: :resolved}
+    assert resolution == Rajska.RateLimiter.call(resolution, [])
+  end
+
   defp query(name), do: "{ #{name} }"
   defp query(name, key, value) when is_binary(value), do: "{ #{name}(#{key}: \"#{value}\") }"
   defp query(name, key, %{} = value), do: "{ #{name}(#{key}: {#{build_arguments(value)}}) }"
