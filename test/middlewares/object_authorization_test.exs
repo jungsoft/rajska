@@ -50,6 +50,13 @@ defmodule Rajska.ObjectAuthorizationTest do
           {:ok, :user}
         end
       end
+
+      field :union_query, :union do
+        middleware Rajska.QueryAuthorization, [permit: :all, scope: false]
+        resolve fn _, _ ->
+          {:ok, %{name: "bob"}}
+        end
+      end
     end
 
     object :wallet_balance do
@@ -78,6 +85,16 @@ defmodule Rajska.ObjectAuthorizationTest do
       field :name, :string
 
       field :company, :company
+    end
+
+    union :union do
+      meta :authorize, :user
+
+      types [:wallet_balance, :user]
+      resolve_type fn
+        %{name: _}, _ -> :user
+        %{total: _}, _ -> :wallet_balance
+      end
     end
   end
 
@@ -152,6 +169,12 @@ defmodule Rajska.ObjectAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Works for union types" do
+    {:ok, result} = Absinthe.run(union_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"unionQuery" => %{"name" => "bob"}}} = result
+    refute Map.has_key?(result, :errors)
+  end
 
   test "does not apply when resolution is already resolved" do
     resolution = %Absinthe.Resolution{state: :resolved}
@@ -211,4 +234,19 @@ defmodule Rajska.ObjectAuthorizationTest do
   end
 
   defp enum_query, do:  "{ enumQuery }"
+
+  defp union_query do
+    """
+    {
+      unionQuery {
+        ... on User {
+          name
+        }
+        ... on WalletBalance {
+          total
+        }
+      }
+    }
+    """
+  end
 end
