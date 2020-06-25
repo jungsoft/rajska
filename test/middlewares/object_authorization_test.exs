@@ -88,8 +88,6 @@ defmodule Rajska.ObjectAuthorizationTest do
     end
 
     union :union do
-      meta :authorize, :user
-
       types [:wallet_balance, :user]
       resolve_type fn
         %{name: _}, _ -> :user

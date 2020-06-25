@@ -79,7 +79,7 @@ defmodule Rajska.ObjectAuthorization do
 
   # When is a Scalar, Custom or Enum type, authorize.
   defp authorize_object(%type{} = object, fields, resolution)
-  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value] do
+  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value, Type.Union] do
     put_result(true, fields, resolution, object)
   end
 
