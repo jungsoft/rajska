@@ -1,6 +1,6 @@
 # Rajska
 
-[![Coverage Status](https://coveralls.io/repos/github/rschef/rajska/badge.svg?branch=master)](https://coveralls.io/github/rschef/rajska?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/jungsoft/rajska/badge.svg?branch=master)](https://coveralls.io/github/jungsoft/rajska?branch=master)
 
 Rajska is an elixir authorization library for [Absinthe](https://github.com/absinthe-graphql/absinthe).
 
@@ -375,7 +375,7 @@ for more information.
 
 ## Related Projects
 
-[Crudry](https://github.com/gabrielpra1/crudry) is an elixir library for DRYing CRUD of Phoenix Contexts and Absinthe Resolvers.
+[Crudry](https://github.com/jungsoft/crudry) is an elixir library for DRYing CRUD of Phoenix Contexts and Absinthe Resolvers.
 
 ## License
 

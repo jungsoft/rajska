@@ -1,6 +1,8 @@
 defmodule Rajska.MixProject do
   use Mix.Project
 
+  @github_url "https://github.com/jungsoft/rajska"
+
   def project do
     [
       app: :rajska,
@@ -9,7 +11,7 @@ defmodule Rajska.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Rajska",
-      source_url: "https://github.com/rschef/rajska",
+      source_url: @github_url,
       description: "Rajska is an authorization library for Absinthe.",
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -39,7 +41,7 @@ defmodule Rajska.MixProject do
       files: ~w(lib mix.exs README* LICENSE*),
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/rschef/rajska",
+        "GitHub" => @github_url,
         "Docs" => "https://hexdocs.pm/rajska/"
       }
     ]
