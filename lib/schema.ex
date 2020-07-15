@@ -5,6 +5,7 @@ defmodule Rajska.Schema do
 
   alias Absinthe.Middleware
   alias Absinthe.Type.{Field, Object}
+  alias Absinthe.Phase.Schema.Introspection
 
   alias Rajska.{
     FieldAuthorization,
@@ -17,6 +18,8 @@ defmodule Rajska.Schema do
     Field.t(),
     module()
   ) :: [Middleware.spec(), ...]
+  def add_query_authorization(middleware, %{definition: Introspection}, _authorizaton),
+    do: middleware
   def add_query_authorization(
     [{{QueryAuthorization, :call}, config} = query_authorization | middleware] = _middleware,
     %Field{name: query_name},

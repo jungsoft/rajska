@@ -76,6 +76,9 @@ defmodule Rajska.ObjectScopeAuthorization do
   when identifier in [:query_type, nil] do
     result
   end
+  defp result(%{emitter: %{schema_node: %{definition: Absinthe.Phase.Schema.Introspection}}} = result, _context) do
+    result
+  end
 
   # Root
   defp result(%{fields: fields, emitter: %{schema_node: %{identifier: identifier}}} = result, context)
