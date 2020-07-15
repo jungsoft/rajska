@@ -63,7 +63,8 @@ defmodule Rajska.ObjectAuthorization do
   def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
   def call(%Resolution{definition: definition} = resolution, _config) do
-    authorize(definition.schema_node.type, definition.selections, resolution)
+    fields = Resolution.project(resolution)
+    authorize(definition.schema_node.type, fields, resolution)
   end
 
   defp authorize(type, fields, resolution) do
@@ -112,6 +113,13 @@ defmodule Rajska.ObjectAuthorization do
     resolution
   ) do
     authorize(schema_node, selections ++ tail, resolution)
+  end
+
+  defp find_associations(
+    [%Absinthe.Blueprint.Document.Fragment.Spread{} | tail],
+    resolution
+  ) do
+    find_associations(tail, resolution)
   end
 
   defp find_associations(
