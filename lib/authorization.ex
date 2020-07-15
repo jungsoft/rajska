@@ -24,7 +24,8 @@ defmodule Rajska.Authorization do
 
   @callback has_user_access?(current_user, scoped_struct, rule) :: boolean()
 
-  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
+  @callback unauthorized_message(resolution :: Resolution.t()) ::
+              Absinthe.Type.Field.error_value()
 
   @callback context_role_authorized?(context, allowed_role :: role) :: boolean()
 
