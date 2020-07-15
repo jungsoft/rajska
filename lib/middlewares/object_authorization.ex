@@ -88,9 +88,16 @@ defmodule Rajska.ObjectAuthorization do
   defp authorize_object(object, fields, resolution) do
     object
     |> Type.meta(:authorize)
+    |> default_authorize(resolution.context, object)
     |> authorized?(resolution.context, object)
     |> put_result(fields, resolution, object)
   end
+
+  defp default_authorize(nil, context, object) do
+    Rajska.apply_auth_mod(context, :default_authorize, [context, object])
+  end
+
+  defp default_authorize(authorize, _context, _object), do: authorize
 
   defp authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 

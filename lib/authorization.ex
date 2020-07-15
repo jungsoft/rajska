@@ -30,6 +30,8 @@ defmodule Rajska.Authorization do
 
   @callback context_user_authorized?(context, scoped_struct, rule) :: boolean()
 
+  @callback default_authorize(context, scoped_struct) :: role() | nil
+
   @optional_callbacks get_current_user: 1,
                       get_ip: 1,
                       get_user_role: 1,
@@ -38,5 +40,6 @@ defmodule Rajska.Authorization do
                       has_user_access?: 3,
                       unauthorized_message: 1,
                       context_role_authorized?: 2,
-                      context_user_authorized?: 3
+                      context_user_authorized?: 3,
+                      default_authorize: 2
 end
