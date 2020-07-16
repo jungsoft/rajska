@@ -24,11 +24,14 @@ defmodule Rajska.Authorization do
 
   @callback has_user_access?(current_user, scoped_struct, rule) :: boolean()
 
-  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
+  @callback unauthorized_message(resolution :: Resolution.t()) ::
+              Absinthe.Type.Field.error_value()
 
   @callback context_role_authorized?(context, allowed_role :: role) :: boolean()
 
   @callback context_user_authorized?(context, scoped_struct, rule) :: boolean()
+
+  @callback default_authorize(context, scoped_struct) :: role() | nil
 
   @optional_callbacks get_current_user: 1,
                       get_ip: 1,
@@ -38,5 +41,6 @@ defmodule Rajska.Authorization do
                       has_user_access?: 3,
                       unauthorized_message: 1,
                       context_role_authorized?: 2,
-                      context_user_authorized?: 3
+                      context_user_authorized?: 3,
+                      default_authorize: 2
 end

@@ -51,10 +51,10 @@ defmodule Rajska.MixProject do
     [
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: false},
-      {:absinthe, "~> 1.4.0"},
+      {:absinthe, "~> 1.4.0 or ~> 1.5.0"},
       {:excoveralls, "~> 0.11", only: :test},
       {:hammer, "~> 6.0", optional: true},
-      {:mock, "~> 0.3.0", only: :test},
+      {:mock, "~> 0.3.0", only: :test}
     ]
   end
 

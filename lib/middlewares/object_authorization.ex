@@ -63,7 +63,8 @@ defmodule Rajska.ObjectAuthorization do
   def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
   def call(%Resolution{definition: definition} = resolution, _config) do
-    authorize(definition.schema_node.type, definition.selections, resolution)
+    fields = Resolution.project(resolution)
+    authorize(definition.schema_node.type, fields, resolution)
   end
 
   defp authorize(type, fields, resolution) do
@@ -87,9 +88,16 @@ defmodule Rajska.ObjectAuthorization do
   defp authorize_object(object, fields, resolution) do
     object
     |> Type.meta(:authorize)
+    |> default_authorize(resolution.context, object)
     |> authorized?(resolution.context, object)
     |> put_result(fields, resolution, object)
   end
+
+  defp default_authorize(nil, context, object) do
+    Rajska.apply_auth_mod(context, :default_authorize, [context, object])
+  end
+
+  defp default_authorize(authorize, _context, _object), do: authorize
 
   defp authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
 
@@ -112,6 +120,13 @@ defmodule Rajska.ObjectAuthorization do
     resolution
   ) do
     authorize(schema_node, selections ++ tail, resolution)
+  end
+
+  defp find_associations(
+    [%Absinthe.Blueprint.Document.Fragment.Spread{} | tail],
+    resolution
+  ) do
+    find_associations(tail, resolution)
   end
 
   defp find_associations(

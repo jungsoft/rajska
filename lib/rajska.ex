@@ -65,7 +65,8 @@ defmodule Rajska do
   defmacro __using__(opts \\ []) do
     super_role = Keyword.get(opts, :super_role, :admin)
     valid_roles = Keyword.get(opts, :valid_roles, [super_role])
-    default_rule =  Keyword.get(opts, :default_rule, :default)
+    default_rule = Keyword.get(opts, :default_rule, :default)
+    default_authorize = Keyword.get(opts, :default_authorize, nil)
 
     quote do
       @behaviour Authorization
@@ -130,6 +131,8 @@ defmodule Rajska do
         |> get_current_user()
         |> has_user_access?(scoped_struct, rule)
       end
+      
+      def default_authorize(_context, _object), do: unquote(default_authorize)
 
       defoverridable Authorization
     end
