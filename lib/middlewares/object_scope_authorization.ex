@@ -62,11 +62,16 @@ defmodule Rajska.ObjectScopeAuthorization do
   alias Absinthe.{Blueprint, Phase, Type}
   alias Rajska.Introspection
   use Absinthe.Phase
+  @behaviour Absinthe.Plugin
 
   @spec run(Blueprint.t() | Phase.Error.t(), Keyword.t()) :: {:ok, map}
   def run(%Blueprint{execution: execution} = bp, _options \\ []) do
     {:ok, %{bp | execution: process(execution)}}
   end
+
+  def pipeline(pipeline, _execution), do: pipeline
+  def before_resolution(execution), do: execution
+  def after_resolution(execution), do: process(execution)
 
   defp process(%{validation_errors: [], result: result} = execution), do: %{execution | result: result(result, execution.context)}
   defp process(execution), do: execution
@@ -79,6 +84,9 @@ defmodule Rajska.ObjectScopeAuthorization do
   defp result(%{emitter: %{schema_node: %{definition: Absinthe.Phase.Schema.Introspection}}} = result, _context) do
     result
   end
+
+  # No fields because of non_null violation further down the tree
+  defp result(%{fields: nil} = result, _context), do: result
 
   # Root
   defp result(%{fields: fields, emitter: %{schema_node: %{identifier: identifier}}} = result, context)
