@@ -57,6 +57,7 @@ defmodule Rajska.ObjectAuthorization do
     Schema,
     Type
   }
+  alias Absinthe.Blueprint.Document.Fragment.Spread
   alias Rajska.Introspection
   alias Type.{Custom, Scalar}
 
@@ -119,6 +120,14 @@ defmodule Rajska.ObjectAuthorization do
     resolution
   ) do
     authorize(schema_node.type, selections ++ tail, resolution)
+  end
+
+  defp find_associations(
+    [%Spread{name: fragment_name} | tail],
+    %{fragments: fragments} = resolution
+  ) do
+    fragment = Map.fetch!(fragments, fragment_name)
+    find_associations([fragment | tail], resolution)
   end
 
   defp find_associations([], resolution), do: resolution
