@@ -174,6 +174,24 @@ defmodule Rajska.ObjectAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Works when using fragments and user has access" do
+    {:ok, result} = Absinthe.run(fragment_query_user(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+
+    assert %{data: %{"userQuery" => %{"name" => "bob", "company" => %{}}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
+  test "Returns error when using fragments and user does not have access" do
+    assert {:ok, %{errors: errors}} = Absinthe.run(fragment_query_admin(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
+    assert [
+      %{
+        locations: [%{column: 0, line: 13}],
+        message: "Not authorized to access object wallet_balance",
+        path: ["userQuery"]
+      }
+    ] == errors
+  end
+
   test "does not apply when resolution is already resolved" do
     resolution = %Absinthe.Resolution{state: :resolved}
     assert resolution == Rajska.ObjectAuthorization.call(resolution, [])
@@ -243,6 +261,43 @@ defmodule Rajska.ObjectAuthorizationTest do
         ... on WalletBalance {
           total
         }
+      }
+    }
+    """
+  end
+
+  defp fragment_query_user do
+    """
+    fragment userFields on User {
+      name
+      company {
+        name
+      }
+    }
+    {
+      userQuery {
+        ...userFields
+      }
+    }
+    """
+  end
+
+  defp fragment_query_admin do
+    """
+    fragment companyFields on Company {
+      walletBalance {
+        total
+      }
+    }
+    fragment userFields on User {
+      name
+      company {
+        ...companyFields
+      }
+    }
+    {
+      userQuery {
+        ...userFields
       }
     }
     """
