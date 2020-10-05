@@ -17,19 +17,23 @@ defmodule Rajska.Schema do
     Field.t(),
     module()
   ) :: [Middleware.spec(), ...]
-  def add_query_authorization(
-    [{{QueryAuthorization, :call}, config} = query_authorization | middleware] = _middleware,
-    %Field{name: query_name},
-    authorization
-  ) do
-    validate_query_auth_config!(config, authorization, query_name)
+  def add_query_authorization(middleware, %Field{name: query_name}, authorization) do
+    middleware
+    |> Enum.find(&find_middleware/1)
+    |> case do
+      {{QueryAuthorization, :call}, config} ->
+        validate_query_auth_config!(config, authorization, query_name)
 
-    [query_authorization | middleware]
+      {{Absinthe.Resolution, :call}, _config} ->
+        raise "No permission specified for query #{query_name}"
+    end
+
+    middleware
   end
 
-  def add_query_authorization(_middleware, %Field{name: name}, _authorization) do
-    raise "No permission specified for query #{name}"
-  end
+  def find_middleware({{QueryAuthorization, :call}, _config}), do: true
+  def find_middleware({{Absinthe.Resolution, :call}, _config}), do: true
+  def find_middleware({_middleware, _config}), do: false
 
   @spec add_object_authorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
   def add_object_authorization([{{QueryAuthorization, :call}, _} = query_authorization | middleware]) do
