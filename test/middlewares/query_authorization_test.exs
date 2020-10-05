@@ -51,7 +51,7 @@ defmodule Rajska.QueryAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(admin_query(), __MODULE__.Schema, context: %{current_user: nil})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "unauthorized",
         path: ["adminQuery"]
       }
@@ -62,7 +62,7 @@ defmodule Rajska.QueryAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(admin_query(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "unauthorized",
         path: ["adminQuery"]
       }
@@ -80,7 +80,7 @@ defmodule Rajska.QueryAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(user_query(), __MODULE__.Schema, context: %{current_user: nil})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "unauthorized",
         path: ["userQuery"]
       }

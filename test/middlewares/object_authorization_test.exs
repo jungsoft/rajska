@@ -121,7 +121,7 @@ defmodule Rajska.ObjectAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(all_query_with_user_object(), __MODULE__.Schema, context: %{current_user: nil})
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object company",
         path: ["allQuery"]
       }
@@ -146,7 +146,7 @@ defmodule Rajska.ObjectAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(user_query_with_admin_object(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object wallet_balance",
         path: ["userQuery"]
       }
@@ -185,7 +185,7 @@ defmodule Rajska.ObjectAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(fragment_query_admin(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
     assert [
       %{
-        locations: [%{column: 0, line: 13}],
+        locations: [%{column: 3, line: 13}],
         message: "Not authorized to access object wallet_balance",
         path: ["userQuery"]
       }
