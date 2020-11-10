@@ -57,6 +57,27 @@ defmodule Rajska do
   end
   ```
 
+  The only exception is [Object Scope Authorization](#object-scope-authorization), which isn't a middleware, but an [Absinthe Phase](https://hexdocs.pm/absinthe/Absinthe.Phase.html). To use it, add it to your pipeline after the resolution:
+
+  ```elixir
+  # router.ex
+  alias Absinthe.Phase.Document.Execution.Resolution
+  alias Absinthe.Pipeline
+  alias Rajska.ObjectScopeAuthorization
+
+  forward "/graphql", Absinthe.Plug,
+    schema: MyProjectWeb.Schema,
+    socket: MyProjectWeb.UserSocket,
+    pipeline: {__MODULE__, :pipeline} # Add this line
+
+  def pipeline(config, pipeline_opts) do
+    config
+    |> Map.fetch!(:schema_mod)
+    |> Pipeline.for_document(pipeline_opts)
+    |> Pipeline.insert_after(Resolution, ObjectScopeAuthorization)
+  end
+  ```
+
   Since Scope Authorization middleware must be used with Query Authorization, it is automatically called when adding the former.
   """
 
