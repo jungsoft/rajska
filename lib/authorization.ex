@@ -4,6 +4,7 @@ defmodule Rajska.Authorization do
   """
 
   alias Absinthe.Resolution
+  alias Absinthe.Type.Object
 
   @type current_user :: any()
   @type role :: atom()
@@ -25,6 +26,10 @@ defmodule Rajska.Authorization do
   @callback has_user_access?(current_user, scoped_struct, rule) :: boolean()
 
   @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
+
+  @callback unauthorized_object_message(resolution :: Resolution.t(), Object.t) :: String.t()
+
+  @callback unauthorized_field_message(resolution :: Resolution.t(), atom()) :: String.t()
 
   @callback context_role_authorized?(context, allowed_role :: role) :: boolean()
 

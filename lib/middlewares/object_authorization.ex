@@ -100,8 +100,11 @@ defmodule Rajska.ObjectAuthorization do
 
   defp put_result(true, fields, resolution, _type), do: find_associations(fields, resolution)
 
-  defp put_result(false, _fields, resolution, object) do
-    Resolution.put_result(resolution, {:error, "Not authorized to access object #{object.identifier}"})
+  defp put_result(false, _fields, %{context: context} = resolution, object) do
+    Resolution.put_result(
+      resolution,
+      {:error, Rajska.apply_auth_mod(context, :unauthorized_object_message, [resolution, object])}
+    )
   end
 
   defp find_associations([%{selections: []} | tail], resolution) do

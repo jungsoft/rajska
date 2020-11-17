@@ -78,7 +78,10 @@ defmodule Rajska.FieldAuthorization do
 
   defp put_result(true, resolution, _field), do: resolution
 
-  defp put_result(false, resolution, field) do
-    Resolution.put_result(resolution, {:error, "Not authorized to access field #{field}"})
+  defp put_result(false, %{context: context} = resolution, field) do
+    Resolution.put_result(
+      resolution,
+      {:error, Rajska.apply_auth_mod(context, :unauthorized_field_message, [resolution, field])}
+    )
   end
 end
