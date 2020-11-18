@@ -46,6 +46,8 @@ defmodule Rajska.Authorization do
                       role_authorized?: 2,
                       has_user_access?: 3,
                       unauthorized_message: 1,
+                      unauthorized_query_scope_message: 2,
+                      unauthorized_object_scope_message: 2,
                       unauthorized_object_message: 2,
                       unauthorized_field_message: 2,
                       context_role_authorized?: 2,
