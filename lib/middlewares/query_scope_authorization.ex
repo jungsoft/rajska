@@ -132,21 +132,12 @@ defmodule Rajska.QueryScopeAuthorization do
 
   defp update_result(true, resolution), do: resolution
 
-  defp update_result(
-    false,
-    %Resolution{definition: %{schema_node: %{type: object_type}}} = resolution
-  ) do
+  defp update_result(false, %{context: context, definition: %{schema_node: %{type: object_type}}} = resolution) do
     object_type = Introspection.get_object_type(object_type)
-    put_error(resolution, "Not authorized to access this #{replace_underscore(object_type)}")
-  end
 
-  defp put_error(resolution, message), do: Resolution.put_result(resolution, {:error, message})
-
-  defp replace_underscore(string) when is_binary(string), do: String.replace(string, "_", " ")
-
-  defp replace_underscore(atom) when is_atom(atom) do
-    atom
-    |> Atom.to_string()
-    |> replace_underscore()
+    Resolution.put_result(
+      resolution,
+      {:error, Rajska.apply_auth_mod(context, :unauthorized_query_scope_message, [resolution, object_type])}
+    )
   end
 end

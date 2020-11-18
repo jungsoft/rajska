@@ -27,6 +27,10 @@ defmodule Rajska.Authorization do
 
   @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
 
+  @callback unauthorized_query_scope_message(resolution :: Resolution.t(), atom()) :: String.t()
+
+  @callback unauthorized_object_scope_message(object_result :: Absinthe.Blueprint.Result.Object.t(), atom()) :: String.t()
+
   @callback unauthorized_object_message(resolution :: Resolution.t(), Object.t) :: String.t()
 
   @callback unauthorized_field_message(resolution :: Resolution.t(), atom()) :: String.t()
@@ -42,6 +46,8 @@ defmodule Rajska.Authorization do
                       role_authorized?: 2,
                       has_user_access?: 3,
                       unauthorized_message: 1,
+                      unauthorized_object_message: 2,
+                      unauthorized_field_message: 2,
                       context_role_authorized?: 2,
                       context_user_authorized?: 3
 end
