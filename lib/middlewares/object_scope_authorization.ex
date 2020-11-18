@@ -84,7 +84,7 @@ defmodule Rajska.ObjectScopeAuthorization do
   end
 
   # Object
-  defp result(%{fields: fields, emitter: %{schema_node: schema_node} = emitter, root_value: root_value} = result, context) do
+  defp result(%{fields: fields, emitter: %{schema_node: schema_node}, root_value: root_value} = result, context) do
     type = Introspection.get_object_type(schema_node.type)
     scope? = get_scope!(type)
     default_rule = Rajska.apply_auth_mod(context, :default_rule)
@@ -92,7 +92,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
     case authorized?(scope?, context, root_value, rule) do
       true -> %{result | fields: walk_result(fields, context)}
-      false -> Map.put(result, :errors, [error(emitter)])
+      false -> Map.put(result, :errors, [error(result, context)])
     end
   end
 
@@ -131,10 +131,11 @@ defmodule Rajska.ObjectScopeAuthorization do
     Rajska.apply_auth_mod(context, :context_user_authorized?, [context, scoped_struct, rule])
   end
 
-  defp error(%{source_location: location, schema_node: %{type: type}}) do
+  defp error(%{emitter: %{source_location: location, schema_node: %{type: type}}} = result, context) do
+    object_type = Rajska.Introspection.get_object_type(type)
     %Phase.Error{
       phase: __MODULE__,
-      message: "Not authorized to access object #{Introspection.get_object_type(type).identifier}",
+      message: Rajska.apply_auth_mod(context, :unauthorized_object_scope_message, [result, object_type]),
       locations: [location]
     }
   end
