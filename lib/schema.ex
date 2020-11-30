@@ -17,8 +17,8 @@ defmodule Rajska.Schema do
     Field.t(),
     module()
   ) :: [Middleware.spec(), ...]
-  def add_query_authorization(middleware, %Field{name: query_name}, authorization) do
-    middleware
+  def add_query_authorization(middlewares, %Field{name: query_name}, authorization) do
+    middlewares
     |> Enum.find(&find_middleware/1)
     |> case do
       {{QueryAuthorization, :call}, config} ->
@@ -28,7 +28,7 @@ defmodule Rajska.Schema do
         raise "No permission specified for query #{query_name}"
     end
 
-    middleware
+    middlewares
   end
 
   def find_middleware({{QueryAuthorization, :call}, _config}), do: true
@@ -36,11 +36,17 @@ defmodule Rajska.Schema do
   def find_middleware({_middleware, _config}), do: false
 
   @spec add_object_authorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
-  def add_object_authorization([{{QueryAuthorization, :call}, _} = query_authorization | middleware]) do
-    [query_authorization, ObjectAuthorization] ++ middleware
-  end
+  def add_object_authorization(middlewares) do
+    middlewares
+    |> Enum.reduce([], fn
+      {{QueryAuthorization, :call}, _config} = query_authorization, new_middlewares ->
+        [ObjectAuthorization, query_authorization] ++ new_middlewares
 
-  def add_object_authorization(middleware), do: [ObjectAuthorization | middleware]
+      middleware, new_middlewares ->
+        [middleware | new_middlewares]
+    end)
+    |> Enum.reverse()
+  end
 
   @spec add_field_authorization(
     [Middleware.spec(), ...],
