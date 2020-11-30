@@ -42,10 +42,20 @@ defmodule Rajska.Schema do
       {{QueryAuthorization, :call}, _config} = query_authorization, new_middlewares ->
         [ObjectAuthorization, query_authorization] ++ new_middlewares
 
+      {{Absinthe.Resolution, :call}, _config} = resolution, new_middlewares ->
+        add_object_authorization_if_not_yet_present(resolution, new_middlewares)
+
       middleware, new_middlewares ->
         [middleware | new_middlewares]
     end)
     |> Enum.reverse()
+  end
+
+  defp add_object_authorization_if_not_yet_present(resolution, new_middlewares) do
+    case Enum.member?(new_middlewares, ObjectAuthorization) do
+      true -> [resolution | new_middlewares]
+      false -> [resolution, ObjectAuthorization] ++ new_middlewares
+    end
   end
 
   @spec add_field_authorization(
