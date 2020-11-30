@@ -202,7 +202,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query(1), context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -220,7 +220,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_with_company(1), context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -239,7 +239,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(query, context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "Not authorized to access object object_scope_user",
       }
     ] == errors
@@ -249,7 +249,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 8}],
+        locations: [%{column: 7, line: 8}],
         message: "Not authorized to access object wallet",
       }
     ] == errors
@@ -261,7 +261,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_company_wallet(2), context(:user, 1))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -279,7 +279,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_no_company(2), context(:user, 1))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -299,7 +299,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 8}],
+        locations: [%{column: 7, line: 8}],
         message: "Not authorized to access object wallet",
       }
     ] == errors
@@ -311,7 +311,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(all_query_companies_list(2), context(:user, 1))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -321,7 +321,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(users_query(), context(:user, 2))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user",
       }
     ] == errors
@@ -335,7 +335,7 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = run_pipeline(user_query_with_rule(), context(:admin, 1))
     assert [
       %{
-        locations: [%{column: 0, line: 2}],
+        locations: [%{column: 3, line: 2}],
         message: "Not authorized to access object user_rule",
       }
     ] == errors

@@ -42,7 +42,8 @@ defmodule Rajska.FieldAuthorization do
   }
 
   def call(resolution, [object: %Type.Object{fields: fields} = object, field: field]) do
-    field_private? = fields[field] |> Type.meta(:private) |> field_private?(resolution.source)
+    {private_config, _binding} = fields[field] |> Type.meta(:private) |> Code.eval_quoted()
+    field_private? = field_private?(private_config, resolution.source)
     scope? = get_scope!(object)
 
     default_rule = Rajska.apply_auth_mod(resolution.context, :default_rule)

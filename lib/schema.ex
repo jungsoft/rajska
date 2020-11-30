@@ -17,26 +17,46 @@ defmodule Rajska.Schema do
     Field.t(),
     module()
   ) :: [Middleware.spec(), ...]
-  def add_query_authorization(
-    [{{QueryAuthorization, :call}, config} = query_authorization | middleware] = _middleware,
-    %Field{name: query_name},
-    authorization
-  ) do
-    validate_query_auth_config!(config, authorization, query_name)
+  def add_query_authorization(middlewares, %Field{name: query_name}, authorization) do
+    middlewares
+    |> Enum.find(&find_middleware/1)
+    |> case do
+      {{QueryAuthorization, :call}, config} ->
+        validate_query_auth_config!(config, authorization, query_name)
 
-    [query_authorization | middleware]
+      {{Absinthe.Resolution, :call}, _config} ->
+        raise "No permission specified for query #{query_name}"
+    end
+
+    middlewares
   end
 
-  def add_query_authorization(_middleware, %Field{name: name}, _authorization) do
-    raise "No permission specified for query #{name}"
-  end
+  def find_middleware({{QueryAuthorization, :call}, _config}), do: true
+  def find_middleware({{Absinthe.Resolution, :call}, _config}), do: true
+  def find_middleware({_middleware, _config}), do: false
 
   @spec add_object_authorization([Middleware.spec(), ...]) :: [Middleware.spec(), ...]
-  def add_object_authorization([{{QueryAuthorization, :call}, _} = query_authorization | middleware]) do
-    [query_authorization, ObjectAuthorization] ++ middleware
+  def add_object_authorization(middlewares) do
+    middlewares
+    |> Enum.reduce([], fn
+      {{QueryAuthorization, :call}, _config} = query_authorization, new_middlewares ->
+        [ObjectAuthorization, query_authorization] ++ new_middlewares
+
+      {{Absinthe.Resolution, :call}, _config} = resolution, new_middlewares ->
+        add_object_authorization_if_not_yet_present(resolution, new_middlewares)
+
+      middleware, new_middlewares ->
+        [middleware | new_middlewares]
+    end)
+    |> Enum.reverse()
   end
 
-  def add_object_authorization(middleware), do: [ObjectAuthorization | middleware]
+  defp add_object_authorization_if_not_yet_present(resolution, new_middlewares) do
+    case Enum.member?(new_middlewares, ObjectAuthorization) do
+      true -> [resolution | new_middlewares]
+      false -> [resolution, ObjectAuthorization] ++ new_middlewares
+    end
+  end
 
   @spec add_field_authorization(
     [Middleware.spec(), ...],

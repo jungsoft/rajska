@@ -177,6 +177,7 @@ defmodule Rajska.FieldAuthorizationTest do
     {:ok, result} = Absinthe.run("{ getNotScoped { phone } }", __MODULE__.Schema, context(:user, 2))
 
     assert %{data: %{"getNotScoped" => data}} = result
+    assert is_binary(data["phone"])
     refute Map.has_key?(result, :errors)
   end
 

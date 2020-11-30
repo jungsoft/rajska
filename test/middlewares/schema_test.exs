@@ -252,4 +252,69 @@ defmodule Rajska.SchemaTest do
       {:ok, _result} = Absinthe.run("{ getUser }", Schema, context: %{current_user: nil})
     end
   end
+
+  test "Adds object authorization after query authorization" do
+    defmodule SchemaQueryAndObjectAuthorization do
+      use Absinthe.Schema
+
+      def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+      def middleware(middleware, field, %{identifier: identifier})
+      when identifier in [:query, :mutation] do
+        middleware
+        |> Rajska.add_query_authorization(field, Authorization)
+        |> Rajska.add_object_authorization()
+        |> check_middlewares()
+      end
+
+      def middleware(middleware, _field, _object), do: middleware
+
+      def check_middlewares(middlewares) do
+        assert [
+          {Absinthe.Middleware.Telemetry, []},
+          {{Rajska.QueryAuthorization, :call}, [permit: :all]},
+          Rajska.ObjectAuthorization,
+          {{Absinthe.Resolution, :call}, _fn}
+        ] = middlewares
+      end
+
+      query do
+        field :get_user, :string do
+          middleware Rajska.QueryAuthorization, permit: :all
+          resolve fn _args, _info -> {:ok, "bob"} end
+        end
+      end
+    end
+  end
+
+  test "Adds object authorization before resolution when there is no query authorization" do
+    defmodule SchemaObjectAuthorization do
+      use Absinthe.Schema
+
+      def context(ctx), do: Map.put(ctx, :authorization, Authorization)
+
+      def middleware(middleware, _field, %{identifier: identifier})
+      when identifier in [:query, :mutation] do
+        middleware
+        |> Rajska.add_object_authorization()
+        |> check_middlewares()
+      end
+
+      def middleware(middleware, _field, _object), do: middleware
+
+      def check_middlewares(middlewares) do
+        assert [
+          {Absinthe.Middleware.Telemetry, []},
+          Rajska.ObjectAuthorization,
+          {{Absinthe.Resolution, :call}, _fn}
+        ] = middlewares
+      end
+
+      query do
+        field :get_user, :string do
+          resolve fn _args, _info -> {:ok, "bob"} end
+        end
+      end
+    end
+  end
 end

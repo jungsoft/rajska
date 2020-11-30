@@ -107,7 +107,7 @@ defmodule Rajska.RateLimiterTest do
       assert {:ok, %{errors: errors}} = Absinthe.run(query(:error_msg), __MODULE__.Schema, @default_context)
       assert [
         %{
-          locations: [%{column: 0, line: 1}],
+          locations: [%{column: 3, line: 1}],
           message: "Rate limit exceeded",
           path: ["error_msg"]
         }

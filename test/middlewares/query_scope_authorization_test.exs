@@ -170,7 +170,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(user_scoped_query, __MODULE__.Schema, context: %{current_user: user})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "Not authorized to access this user",
         path: ["userScopedQuery"]
       }
@@ -243,7 +243,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(custom_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "Not authorized to access this user",
         path: ["customArgScopedQuery"]
       }
@@ -257,7 +257,7 @@ defmodule Rajska.QueryScopeAuthorizationTest do
     assert {:ok, %{errors: errors}} = Absinthe.run(custom_nested_arg_scoped_query, __MODULE__.Schema, context: %{current_user: user})
     assert [
       %{
-        locations: [%{column: 0, line: 1}],
+        locations: [%{column: 3, line: 1}],
         message: "Not authorized to access this user",
         path: ["customNestedArgScopedQuery"]
       }
