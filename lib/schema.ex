@@ -12,12 +12,15 @@ defmodule Rajska.Schema do
     QueryAuthorization
   }
 
+  @modules_to_skip [Absinthe.Phase.Schema.Introspection]
+
   @spec add_query_authorization(
     [Middleware.spec(), ...],
     Field.t(),
     module()
   ) :: [Middleware.spec(), ...]
-  def add_query_authorization(middlewares, %Field{name: query_name}, authorization) do
+  def add_query_authorization(middlewares, %Field{name: query_name, definition: definition_module}, authorization)
+  when definition_module not in @modules_to_skip do
     middlewares
     |> Enum.find(&find_middleware/1)
     |> case do
@@ -30,6 +33,8 @@ defmodule Rajska.Schema do
 
     middlewares
   end
+
+  def add_query_authorization(middlewares, _field, _authorization), do: middlewares
 
   def find_middleware({{QueryAuthorization, :call}, _config}), do: true
   def find_middleware({{Absinthe.Resolution, :call}, _config}), do: true
