@@ -253,7 +253,7 @@ defmodule Rajska.SchemaTest do
     end
   end
 
-  test "Skip the authorization process when query is '__typename'" do
+  test "Does not break and skips middleware check for subscriptions" do
     defmodule SchemaWithSubscription do
       use Absinthe.Schema
 
