@@ -253,6 +253,46 @@ defmodule Rajska.SchemaTest do
     end
   end
 
+  test "Does not break and skips middleware check for subscriptions" do
+    defmodule SchemaWithSubscription do
+      use Absinthe.Schema
+
+      def middleware(middleware, field, %{identifier: identifier})
+      when identifier in [:query, :mutation] do
+        Rajska.add_query_authorization(middleware, field, Authorization)
+      end
+
+      def middleware(middleware, _field, _object), do: middleware
+
+      object :user do
+        field :email, :string
+        field :name, :string
+      end
+
+      mutation do
+        field :create_user, :user do
+          middleware Rajska.QueryAuthorization, permit: :user, scope: false
+          resolve fn _args, _info -> {:ok, %{email: "email", name: "name"}} end
+        end
+      end
+
+      query do
+        field :get_user, :user do
+          middleware Rajska.QueryAuthorization, permit: :user, scope: false
+          resolve fn _args, _info -> {:ok, %{email: "email", name: "name"}} end
+        end
+      end
+
+      subscription do
+        field :new_users, :user do
+          arg :email, non_null(:string)
+
+          config fn args, _info -> {:ok, topic: args.email} end
+        end
+      end
+    end
+  end
+
   test "Adds object authorization after query authorization" do
     defmodule SchemaQueryAndObjectAuthorization do
       use Absinthe.Schema
