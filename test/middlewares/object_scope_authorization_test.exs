@@ -353,6 +353,12 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     end
   end
 
+  test "Skips introspection query" do
+    {:ok, result} = run_pipeline(introspection_query(), context(:admin, 2))
+    assert %{data: %{}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   defp all_query(id) do
     """
     {
@@ -469,6 +475,101 @@ defmodule Rajska.ObjectScopeAuthorizationTest do
     """
     {
       stringQuery
+    }
+    """
+  end
+
+  defp introspection_query do
+    """
+    query IntrospectionQuery {
+      __schema {
+        queryType { name }
+        mutationType { name }
+        subscriptionType { name }
+        types {
+          ...FullType
+        }
+        directives {
+          name
+          description
+          locations
+          args {
+            ...InputValue
+          }
+        }
+      }
+    }
+    fragment FullType on __Type {
+      kind
+      name
+      description
+      fields(includeDeprecated: true) {
+        name
+        description
+        args {
+          ...InputValue
+        }
+        type {
+          ...TypeRef
+        }
+        isDeprecated
+        deprecationReason
+      }
+      inputFields {
+        ...InputValue
+      }
+      interfaces {
+        ...TypeRef
+      }
+      enumValues(includeDeprecated: true) {
+        name
+        description
+        isDeprecated
+        deprecationReason
+      }
+      possibleTypes {
+        ...TypeRef
+      }
+    }
+
+    fragment InputValue on __InputValue {
+      name
+      description
+      type { ...TypeRef }
+      defaultValue
+    }
+
+    fragment TypeRef on __Type {
+      kind
+      name
+      ofType {
+        kind
+        name
+        ofType {
+          kind
+          name
+          ofType {
+            kind
+            name
+            ofType {
+              kind
+              name
+              ofType {
+                kind
+                name
+                ofType {
+                  kind
+                  name
+                  ofType {
+                    kind
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
     """
   end
