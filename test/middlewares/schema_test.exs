@@ -145,13 +145,40 @@ defmodule Rajska.SchemaTest do
     )
   end
 
-  test "Raises if args option is invalid" do
-    assert_raise(
-      RuntimeError,
-      ~r/Query get_user is configured incorrectly, the following args option is invalid: "args"/,
-      fn ->
-        defmodule SchemaInvalidArgs do
+  @args_option_test_cases [
+    {false, :arg},
+    {false, [:arg1, :arg2]},
+    {false, %{arg: :arg}},
+    {false, %{arg: [:arg]}},
+    # This is not the correct usage of &Access.all/0 that is going to be used in the Kernel.get_in/2 in
+    # Rajska.QueryScopeAuthorization.get_scope_field_value/2, but this is necessary because it's not possible to use
+    # Access.all() (the correct usage). But for testing purpose only this is fine.
+    {false, %{arg: [&Access.all/0, :arg]}},
+    {true, "args"},
+    {true, 1},
+    {true, ["args"]},
+    {true, [1]},
+    {true, %{arg: ["arg"]}},
+    {true, %{arg: [1]}},
+    {true, [&Access.all/0, :arg]},
+  ]
+
+  for {{should_raise, args_value}, index} <- Enum.with_index(@args_option_test_cases) do
+    @should_raise should_raise
+    @args_value args_value
+    @index index
+    @base_message "if args option is #{inspect(args_value)}"
+    @message if should_raise, do: "Raises #{@base_message}", else: "Not raises #{@base_message}"
+
+    test @message do
+      args_value = @args_value
+      index = @index
+
+      define_query_fn = fn ->
+        defmodule String.to_atom("SchemaInvalidArgs#{index}") do
           use Absinthe.Schema
+
+          @args_value args_value
 
           def context(ctx), do: Map.put(ctx, :authorization, Authorization)
 
@@ -164,13 +191,26 @@ defmodule Rajska.SchemaTest do
 
           query do
             field :get_user, :string do
-              middleware Rajska.QueryAuthorization, [permit: :user, scope: User, args: "args"]
+              middleware Rajska.QueryAuthorization, [permit: :user, scope: User, args: @args_value]
               resolve fn _args, _info -> {:ok, "bob"} end
             end
           end
         end
       end
-    )
+
+      if @should_raise do
+        invalid_value = if is_map(@args_value), do: @args_value[:arg], else: @args_value
+        escaped_invalid_value = invalid_value |> inspect() |> Regex.escape()
+
+        assert_raise(
+          RuntimeError,
+          ~r/Query get_user is configured incorrectly, the following args option is invalid: #{escaped_invalid_value}/,
+          define_query_fn
+        )
+      else
+        define_query_fn.()
+      end
+    end
   end
 
   test "Raises if optional option is not a boolean" do

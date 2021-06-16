@@ -128,21 +128,26 @@ defmodule Rajska.Schema do
   defp validate_args!(args) when is_map(args) do
     Enum.each(args, fn
       {field, value} when is_atom(field) and is_atom(value) -> :ok
-      {field, values} when is_atom(field) and is_list(values)  -> validate_list_of_atoms!(values)
+      {field, values} when is_atom(field) and is_list(values) -> validate_list_of_atoms_or_function!(values)
       field_value -> raise "the following args option is invalid: #{inspect(field_value)}. Since the provided args is a map, you should provide an atom key and an atom or list of atoms value."
     end)
   end
 
   defp validate_args!(args) when is_list(args), do: validate_list_of_atoms!(args)
-
   defp validate_args!(args) when is_atom(args), do: :ok
-
   defp validate_args!(args), do: raise "the following args option is invalid: #{inspect(args)}"
 
   defp validate_list_of_atoms!(args) do
     Enum.each(args, fn
       arg when is_atom(arg) -> :ok
       arg -> raise "the following args option is invalid: #{inspect(args)}. Expected a list of atoms, but found #{inspect(arg)}"
+    end)
+  end
+
+  defp validate_list_of_atoms_or_function!(args) do
+    Enum.each(args, fn
+      arg when is_atom(arg) or is_function(arg) -> :ok
+      arg -> raise "the following args option is invalid: #{inspect(args)}. Expected a list of atoms or functions, but found #{inspect(arg)}"
     end)
   end
 end
