@@ -61,6 +61,9 @@ defmodule Rajska.QueryScopeAuthorization do
       - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must define a struct.
     * `:args`
       - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
+      This form also accepts a function in the array (the same way as described in the [Kernel.get_in/2](https://hexdocs.pm/elixir/Kernel.html#get_in/2-functions-as-keys)).
+      This way, we can also use `%{user_id: [:params, Access.all(), :id]}` and for an input arg like `params: [%{id: 1}, %{id: 2}]`,
+      the builded struct will have the value `%User{user_id: [1, 2]}`.
       - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to `c:Rajska.Authorization.has_user_access?/3`
       - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
     * `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
