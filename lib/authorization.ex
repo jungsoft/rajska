@@ -25,7 +25,7 @@ defmodule Rajska.Authorization do
 
   @callback has_user_access?(current_user, scoped_struct, rule) :: boolean()
 
-  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t()
+  @callback unauthorized_message(resolution :: Resolution.t()) :: String.t() | map() | list()
 
   @callback unauthorized_query_scope_message(resolution :: Resolution.t(), atom()) :: String.t()
 
