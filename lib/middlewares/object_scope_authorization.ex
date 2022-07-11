@@ -73,7 +73,7 @@ defmodule Rajska.ObjectScopeAuthorization do
 
   # Introspection
   defp result(%{emitter: %{schema_node: %{identifier: identifier}}} = result, _context)
-  when identifier in [:query_type, nil] do
+  when identifier in [:query_type, :__schema, nil] do
     result
   end
 
