@@ -80,7 +80,7 @@ defmodule Rajska.ObjectAuthorization do
 
   # When is a Scalar, Custom or Enum type, authorize.
   defp authorize_object(%type{} = object, fields, resolution)
-  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value, Type.Union] do
+  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value, Type.Union, Type.Interface] do
     put_result(true, fields, resolution, object)
   end
 
@@ -113,6 +113,13 @@ defmodule Rajska.ObjectAuthorization do
 
   defp find_associations(
     [%{schema_node: %Type.Object{} = schema_node, selections: selections} | tail],
+    resolution
+  ) do
+    authorize(schema_node, selections ++ tail, resolution)
+  end
+
+  defp find_associations(
+    [%{schema_node: %Type.Interface{} = schema_node, selections: selections} | tail],
     resolution
   ) do
     authorize(schema_node, selections ++ tail, resolution)

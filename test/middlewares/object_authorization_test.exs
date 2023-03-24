@@ -57,10 +57,18 @@ defmodule Rajska.ObjectAuthorizationTest do
           {:ok, %{name: "bob"}}
         end
       end
+
+      field :interface_query, :interface do
+        middleware Rajska.QueryAuthorization, [permit: :all, scope: false]
+        resolve fn _, _ ->
+          {:ok, %{name: "bob"}}
+        end
+      end
     end
 
     object :wallet_balance do
       meta :authorize, :admin
+      interfaces([:interface])
 
       field :total, :integer
     end
@@ -80,6 +88,7 @@ defmodule Rajska.ObjectAuthorizationTest do
 
     object :user do
       meta :authorize, :all
+      interfaces([:interface])
 
       field :email, :string
       field :name, :string
@@ -89,6 +98,13 @@ defmodule Rajska.ObjectAuthorizationTest do
 
     union :union do
       types [:wallet_balance, :user]
+      resolve_type fn
+        %{name: _}, _ -> :user
+        %{total: _}, _ -> :wallet_balance
+      end
+    end
+
+    interface :interface do
       resolve_type fn
         %{name: _}, _ -> :user
         %{total: _}, _ -> :wallet_balance
@@ -174,6 +190,13 @@ defmodule Rajska.ObjectAuthorizationTest do
     refute Map.has_key?(result, :errors)
   end
 
+  test "Works for interfaces" do
+    {:ok, result} = Absinthe.run(interface_query(), __MODULE__.Schema, context: %{current_user: %{role: :admin}})
+
+    assert %{data: %{"interfaceQuery" => %{"name" => "bob"}}} = result
+    refute Map.has_key?(result, :errors)
+  end
+
   test "Works when using fragments and user has access" do
     {:ok, result} = Absinthe.run(fragment_query_user(), __MODULE__.Schema, context: %{current_user: %{role: :user}})
 
@@ -255,6 +278,21 @@ defmodule Rajska.ObjectAuthorizationTest do
     """
     {
       unionQuery {
+        ... on User {
+          name
+        }
+        ... on WalletBalance {
+          total
+        }
+      }
+    }
+    """
+  end
+
+  defp interface_query do
+    """
+    {
+      interfaceQuery {
         ... on User {
           name
         }
