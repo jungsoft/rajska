@@ -58,9 +58,9 @@ defmodule Rajska.MixProject do
       {:hammer, "~> 6.0", optional: true},
 
       # dev and test deps
-      {:excoveralls, "~> 0.11", only: :test},
+      {:excoveralls, "~> 0.18", only: :test},
       {:mock, "~> 0.3.0", only: :test},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.34.2", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
