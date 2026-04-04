@@ -14,6 +14,7 @@ defmodule Rajska.MixProject do
       source_url: @github_url,
       description: "Rajska is an authorization library for Absinthe.",
       package: package(),
+      docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases(),
       test_coverage: [tool: ExCoveralls],
@@ -45,6 +46,10 @@ defmodule Rajska.MixProject do
         "Docs" => "https://hexdocs.pm/rajska/"
       }
     ]
+  end
+
+  defp docs do
+    [main: "readme", extras: ["README.md"]]
   end
 
   defp deps do
