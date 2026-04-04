@@ -49,12 +49,14 @@ defmodule Rajska.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:credo, "~> 1.5.0", only: [:dev, :test], runtime: false},
-      {:absinthe, "~> 1.4.0 or ~> 1.5.4 or ~> 1.6.0"},
-      {:excoveralls, "~> 0.11", only: :test},
+      {:absinthe, "~> 1.4.0 or ~> 1.5.4 or ~> 1.6"},
       {:hammer, "~> 6.0", optional: true},
+
+      # dev and test deps
+      {:excoveralls, "~> 0.11", only: :test},
       {:mock, "~> 0.3.0", only: :test},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:credo, "~> 1.5.0", only: [:dev, :test], runtime: false}
     ]
   end
 
