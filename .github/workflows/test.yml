@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        absinthe: ["~> 1.4.0", "~> 1.5.0", "~> 1.10.0"]
+        elixir_otp:
+          - elixir: "1.13"
+            otp: "24.3"
+          - elixir: "1.19.5"
+            otp: "28.4"
+
+    name: Elixir ${{ matrix.elixir_otp.elixir }} / OTP ${{ matrix.elixir_otp.otp }} / Absinthe ${{ matrix.absinthe }}
+
+    env:
+      MIX_ENV: test
+      ABSINTHE_VERSION: ${{ matrix.absinthe }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir_otp.elixir }}
+          otp-version: ${{ matrix.elixir_otp.otp }}
+
+      - name: Fetch dependencies for selected Absinthe version
+        run: |
+          mix deps.unlock --all
+          mix deps.get
+
+      - name: Run test suite
+        run: mix test.all
