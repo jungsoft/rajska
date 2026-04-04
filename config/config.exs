@@ -1,5 +1,4 @@
-use Mix.Config
+import Config
 
-config :logger, level: :debug
-
-import_config "#{Mix.env()}.exs"
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
