@@ -7,4 +7,5 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Raised the minimum supported Elixir version to 1.13.
+- Raised the minimum supported Absinthe version to 1.6.
 - Expanded Absinthe compatibility to support newer releases from 1.6 onward.

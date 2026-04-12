@@ -10,18 +10,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        absinthe: ["~> 1.4.0", "~> 1.5.0", "~> 1.10.0"]
         elixir_otp:
           - elixir: "1.13"
             otp: "24.3"
           - elixir: "1.19.5"
             otp: "28.4"
 
-    name: Elixir ${{ matrix.elixir_otp.elixir }} / OTP ${{ matrix.elixir_otp.otp }} / Absinthe ${{ matrix.absinthe }}
+    name: Elixir ${{ matrix.elixir_otp.elixir }} / OTP ${{ matrix.elixir_otp.otp }}
 
     env:
       MIX_ENV: test
-      ABSINTHE_VERSION: ${{ matrix.absinthe }}
 
     steps:
       - uses: actions/checkout@v6
@@ -31,7 +29,7 @@ jobs:
           elixir-version: ${{ matrix.elixir_otp.elixir }}
           otp-version: ${{ matrix.elixir_otp.otp }}
 
-      - name: Fetch dependencies for selected Absinthe version
+      - name: Fetch dependencies
         run: |
           mix deps.unlock --all
           mix deps.get

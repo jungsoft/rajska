@@ -54,7 +54,7 @@ defmodule Rajska.MixProject do
 
   defp deps do
     [
-      {:absinthe, System.get_env("ABSINTHE_VERSION", "~> 1.4.0 or ~> 1.5.4 or ~> 1.6")},
+      {:absinthe, "~> 1.6"},
       {:hammer, "~> 6.0", optional: true},
 
       # dev and test deps
