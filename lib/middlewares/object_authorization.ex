@@ -52,14 +52,13 @@ defmodule Rajska.ObjectAuthorization do
 
   @behaviour Absinthe.Middleware
 
-  alias Absinthe.{
-    Resolution,
-    Schema,
-    Type
-  }
   alias Absinthe.Blueprint.Document.Fragment.Spread
+  alias Absinthe.Resolution
+  alias Absinthe.Schema
+  alias Absinthe.Type
+  alias Absinthe.Type.Custom
+  alias Absinthe.Type.Scalar
   alias Rajska.Introspection
-  alias Type.{Custom, Scalar}
 
   def call(%Resolution{state: :resolved} = resolution, _config), do: resolution
 
@@ -80,7 +79,7 @@ defmodule Rajska.ObjectAuthorization do
 
   # When is a Scalar, Custom or Enum type, authorize.
   defp authorize_object(%type{} = object, fields, resolution)
-  when type in [Scalar, Custom, Type.Enum, Type.Enum.Value, Type.Union] do
+       when type in [Scalar, Custom, Type.Enum, Type.Enum.Value, Type.Union] do
     put_result(true, fields, resolution, object)
   end
 
@@ -92,7 +91,8 @@ defmodule Rajska.ObjectAuthorization do
     |> put_result(fields, resolution, object)
   end
 
-  defp authorized?(nil, _, object), do: raise "No meta authorize defined for object #{inspect object.identifier}"
+  defp authorized?(nil, _, object),
+    do: raise("No meta authorize defined for object #{inspect(object.identifier)}")
 
   defp authorized?(permission, context, _object) do
     Rajska.apply_auth_mod(context, :context_role_authorized?, [context, permission])
@@ -112,23 +112,23 @@ defmodule Rajska.ObjectAuthorization do
   end
 
   defp find_associations(
-    [%{schema_node: %Type.Object{} = schema_node, selections: selections} | tail],
-    resolution
-  ) do
+         [%{schema_node: %Type.Object{} = schema_node, selections: selections} | tail],
+         resolution
+       ) do
     authorize(schema_node, selections ++ tail, resolution)
   end
 
   defp find_associations(
-    [%{schema_node: schema_node, selections: selections} | tail],
-    resolution
-  ) do
+         [%{schema_node: schema_node, selections: selections} | tail],
+         resolution
+       ) do
     authorize(schema_node.type, selections ++ tail, resolution)
   end
 
   defp find_associations(
-    [%Spread{name: fragment_name} | tail],
-    %{fragments: fragments} = resolution
-  ) do
+         [%Spread{name: fragment_name} | tail],
+         %{fragments: fragments} = resolution
+       ) do
     fragment = Map.fetch!(fragments, fragment_name)
     find_associations([fragment | tail], resolution)
   end

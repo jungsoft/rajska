@@ -1,5 +1,8 @@
 # Rajska
 
+[![CI](https://github.com/jungsoft/rajska/actions/workflows/test.yml/badge.svg)](https://github.com/jungsoft/rajska/actions/workflows/test.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/rajska.svg)](https://hex.pm/packages/rajska)
+[![HexDocs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/rajska/)
 [![Coverage Status](https://coveralls.io/repos/github/jungsoft/rajska/badge.svg?branch=master)](https://coveralls.io/github/jungsoft/rajska?branch=master)
 
 Rajska is an elixir authorization library for [Absinthe](https://github.com/absinthe-graphql/absinthe).
@@ -176,15 +179,15 @@ There are also extra options for this middleware, supporting the definition of c
 
 All the following options are sent to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3):
 
-* `:scope`
+- `:scope`
   - `false`: disables scoping
   - `User`: a module that will be passed to `c:Rajska.Authorization.has_user_access?/3`. It must define a struct.
-* `:args`
+- `:args`
   - `%{user_id: [:params, :id]}`: where `user_id` is the scoped field and `id` is an argument nested inside the `params` argument.
   - `:id`: this is the same as `%{id: :id}`, where `:id` is both the query argument and the scoped field that will be passed to [has_user_access?/3](https://hexdocs.pm/rajska/Rajska.Authorization.html#c:has_user_access?/3)
   - `[:code, :user_group_id]`: this is the same as `%{code: :code, user_group_id: :user_group_id}`, where `code` and `user_group_id` are both query arguments and scoped fields.
-* `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
-* `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
+- `:optional` (optional) - when set to true the arguments are optional, so if no argument is provided, the query will be authorized. Defaults to false.
+- `:rule` (optional) - allows the same struct to have different rules. See `Rajska.Authorization` for `rule` default settings.
 
 ### Object Authorization
 
@@ -225,7 +228,9 @@ With the permissions above, a query like the following would only be allowed by 
     email
     company {
       name
-      walletBalance { total }
+      walletBalance {
+        total
+      }
     }
   }
 }
@@ -362,11 +367,11 @@ end
 
 The allowed configuration are:
 
-* `scale_ms`: The timespan for the maximum number of actions. Defaults to 60_000.
-* `limit`: The maximum number of actions in the specified timespan. Defaults to 10.
-* `id`: An atom or string to be used as the bucket identifier. Note that this will always be the same, so by using this the limit will be global instead of by user.
-* `keys`: An atom or a list of atoms to get a query argument as identifier. Use a list when the argument is nested.
-* `error_msg`: The error message to be displayed when rate limit exceeds. Defaults to `"Too many requests"`.
+- `scale_ms`: The timespan for the maximum number of actions. Defaults to 60_000.
+- `limit`: The maximum number of actions in the specified timespan. Defaults to 10.
+- `id`: An atom or string to be used as the bucket identifier. Note that this will always be the same, so by using this the limit will be global instead of by user.
+- `keys`: An atom or a list of atoms to get a query argument as identifier. Use a list when the argument is nested.
+- `error_msg`: The error message to be displayed when rate limit exceeds. Defaults to `"Too many requests"`.
 
 Note that when neither `id` or `keys` is provided, the default is to use the user's IP. For that, the default behaviour is to use
 `c:Rajska.Authorization.get_ip/1` to fetch the IP from the absinthe context. That means you need to manually insert the user's IP in the
